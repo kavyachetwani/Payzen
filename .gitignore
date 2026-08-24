@@ -1,0 +1,40 @@
+# Credentials & secrets
+.env
+*.json
+!package.json
+!tsconfig.json
+serviceAccountKey.json
+firebase-adminsdk*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Optuna
+*.db
+*.sqlite3
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
