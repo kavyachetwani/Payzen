@@ -136,3 +136,38 @@ The script prints a summary of cause distribution in each split for manual verif
 This column exists ONLY for evaluation. The diagnosis layer receives every other column but never sees `ground_truth_cause`. If at any point the diagnosis code reads this column, the accuracy number is meaningless — it's the equivalent of looking at the answer key during a test.
 
 The `failure_reason_code` column (which the diagnosis layer DOES see) deliberately does not always match `ground_truth_cause`. This is realistic: a `bank_server_error` code can mask a bank-wide outage, a `timeout` can be network-side or bank-side or AFA-related, and `unknown` means the system genuinely doesn't know. The diagnosis layer's job is to use contextual signals (BIN clustering, mandate dates, AFA threshold, prior history) to infer the real cause despite noisy/ambiguous reason codes.
+
+---
+
+## Generated Output (actual distributions from seed=42/7)
+
+### Dataset A: Failed Payments (500 records)
+
+| ground_truth_cause | Count | % |
+|---|---|---|
+| insufficient_funds | 150 | 30.0% |
+| bank_outage | 109 | 21.8% |
+| mandate_expired | 75 | 15.0% |
+| afa_stuck | 65 | 13.0% |
+| card_expired | 60 | 12.0% |
+| ambiguous | 41 | 8.2% |
+
+Bank outage clustering: 7 tight incidents (12–18 records each, all within 2-hour windows). Banks: SBI ×2, PNB ×2, Bank of Baroda ×1, Bank of India ×1, ICICI ×1. Plus 4 stray edge-case records.
+
+### Dataset B: Retry Outcomes (1,200 records)
+
+Pattern verification (success rates):
+
+| Pattern | Rate | Control | Signal strength |
+|---|---|---|---|
+| insufficient_funds near payday (0–3 days) | 59.3% | 40.8% (far) | +18.5pp |
+| bank_outage well-timed (≤1d, 6–18h) | 64.7% | 48.0% (poor) | +16.7pp |
+| card/mandate expired | 8.4% | — | Near zero |
+| Attempt 1 vs Attempt 3 | 34.1% | 29.6% | −4.5pp |
+| insuf_funds sms vs auto | 45.6% | 35.0% | +10.6pp |
+
+### Dataset C: Train/Test Splits
+
+**Stratified (80/20):** proportions preserved within ±0.3pp across all causes.
+
+**Temporal:** train covers Jan 1–26, test covers Jan 26–30. Temporal test is dominated by insufficient_funds (58%) due to month-end clustering — this is realistic and by design.
