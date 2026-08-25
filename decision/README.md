@@ -86,12 +86,23 @@ The bandit helps most on **afa_stuck** (+Rs 3.7L) and **insufficient_funds** (+R
 
 Hard stops that override the bandit — non-negotiable:
 1. **Max 3 retry attempts** per payment (hard cap)
-2. **Min 4-hour cooldown** between attempts for the same payment
-3. **Non-retryable causes** never enter the bandit (mandate_expired, mandate_revoked, card_expired, afa_stuck)
-4. **Ambiguous**: max 1 attempt, not 3
-5. **Notification forcing**: if `pre_debit_notification_sent == False` AND cause is `insufficient_funds`, first action is forced to `sms_then_retry`
+2. **Non-retryable causes** never enter the bandit (mandate_expired, mandate_revoked, card_expired, afa_stuck)
+3. **Ambiguous**: max 1 attempt, not 3
+4. **Notification forcing**: if `pre_debit_notification_sent == False` AND cause is `insufficient_funds`, first action is forced to `sms_then_retry`
 
-All 7 tests pass: 3-attempt cap, non-retryable rejection (all 4 causes), notification forcing, cooldown enforcement, ambiguous 1-attempt cap.
+### NPCI UPI AutoPay timing compliance (Aug 2025 circular)
+
+Payment-method-aware rules. The bandit still picks the ACTION (auto/sms/call), but TIMING is constrained for UPI AutoPay.
+
+**NPCI-mandated (UPI AutoPay only):**
+- Retries ONLY during non-peak hours: before 10:00 AM, 1:00-5:00 PM, after 9:30 PM. Peak windows 10AM-1PM and 5PM-9:30PM are blocked. If the bandit picks a peak-hour time, the scheduler clamps it to the next non-peak window.
+- Minimum retry spacing: attempt 1 >= 24h after failure, attempt 2 >= 72h, attempt 3 at day 7. This overrides the bandit's timing.
+
+**Self-imposed (eNACH and card_auto_debit):**
+- Min 4-hour cooldown between attempts (our own rule, not NPCI-mandated)
+- No peak-hour restriction (not on UPI rails)
+
+All 14 tests pass: original 7 (caps, non-retryable, notification, cooldown, ambiguous) plus 7 NPCI compliance tests (peak-hour clamping, spacing enforcement, eNACH exemption, peak detection).
 
 ## Uplift Caveat
 
@@ -106,6 +117,6 @@ The +146% uplift demonstrates that the bandit correctly recovers known-good poli
 - `bandit.py` — Epsilon-greedy contextual bandit (linear model, 14-dim context)
 - `tune_bandit.py` — Optuna hyperparameter search (50 trials, simulation-based)
 - `backtest.py` — Bandit vs naive baseline comparison (simulation-based, 20 runs)
-- `stopping.py` — Hard stopping rules (3-attempt cap, cooldown, notification forcing)
-- `scheduler.py` — SimClock event queue integration
-- `test_stopping.py` — 7 tests for stopping rules
+- `stopping.py` — Hard stopping rules + NPCI UPI AutoPay timing compliance
+- `scheduler.py` — SimClock event queue integration with UPI peak-hour clamping
+- `test_stopping.py` — 14 tests (7 original + 7 NPCI compliance)
