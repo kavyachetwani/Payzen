@@ -28,6 +28,3 @@ Added `mandate_expiry_date` as a column on the payments table directly. Each pay
 
 Train accuracy went from 90.8% → 95.0% immediately. All 5 previously misclassified mandate_expired records snapped into place.
 
-**Takeaway:**
-
-Normalizing into a mandates table was the "correct" relational modeling choice but it silently assumed one expiry date per mandate. In reality the same mandate shows up across multiple billing periods with different state. Per-payment denormalization of the expiry field is the right tradeoff here — slightly redundant, but the diagnosis layer doesn't get silently corrupted by load order.
