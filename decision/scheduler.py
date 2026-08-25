@@ -1,7 +1,9 @@
 """Wire bandit decisions into the SimClock event queue.
 
-Enforces NPCI UPI AutoPay timing constraints: non-peak execution windows
-and per-attempt minimum spacing (24h/72h/7d).
+Enforces:
+- NPCI UPI AutoPay timing constraints (non-peak execution windows, spacing)
+- RBI contact hours for calls (8AM-7PM)
+- UPI AutoPay + call intersection (8AM-10AM, 1PM-5PM)
 """
 
 import sys
@@ -12,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from simclock.sim_clock import SimClock
 from decision.stopping import clamp_to_non_peak, UPI_ATTEMPT_MIN_HOURS
+from decision.constraints import clamp_call_to_rbi_hours, clamp_upi_call
 
 
 def _clamp_upi_time(dt: datetime) -> datetime:
@@ -49,9 +52,13 @@ def schedule_retry(clock: SimClock, event_queue,
             scheduled_time = _enforce_upi_spacing(
                 scheduled_time, failure_time, attempt_number
             )
-        scheduled_time = _clamp_upi_time(scheduled_time)
+        if bandit_decision == "call_then_retry":
+            scheduled_time = clamp_upi_call(scheduled_time)
+        else:
+            scheduled_time = _clamp_upi_time(scheduled_time)
     else:
-        pass
+        if bandit_decision == "call_then_retry":
+            scheduled_time = clamp_call_to_rbi_hours(scheduled_time)
 
     event = {
         "event_type": "retry_attempt",
