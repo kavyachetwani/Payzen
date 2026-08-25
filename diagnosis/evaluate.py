@@ -5,8 +5,11 @@ confidence calibration, edge case report, and failure analysis.
 """
 
 import json
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from diagnosis.db import get_connection, create_schema, load_data
 from diagnosis.rules import diagnose_all

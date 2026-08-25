@@ -1,8 +1,11 @@
 """Run diagnosis on all 500 records using the tuned config."""
 
 import json
+import sys
 from collections import Counter
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from diagnosis.db import init_db
 from diagnosis.rules import diagnose_all

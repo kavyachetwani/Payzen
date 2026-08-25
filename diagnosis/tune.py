@@ -10,8 +10,11 @@ Prints results for every combination and saves the best config.
 
 import json
 import sqlite3
+import sys
 from itertools import product
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from diagnosis.db import create_schema, load_data, get_connection
 from diagnosis.rules import diagnose_all
