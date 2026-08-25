@@ -1,0 +1,2502 @@
+[
+  {
+    "payment_id": "PAY_00001",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00002",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00003",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00004",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00005",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00006",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00007",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00008",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00009",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00010",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00011",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00012",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00013",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00014",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00015",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00016",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.7
+  },
+  {
+    "payment_id": "PAY_00017",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00018",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00019",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00020",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00021",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00022",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00023",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00024",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00025",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00026",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00027",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00028",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00029",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00030",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00031",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00032",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00033",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00034",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00035",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00036",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00037",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00038",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00039",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00040",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00041",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00042",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00043",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00044",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00045",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00046",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00047",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00048",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00049",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00050",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00051",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00052",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00053",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00054",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00055",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00056",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00057",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00058",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00059",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00060",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00061",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00062",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00063",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00064",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00065",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00066",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00067",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00068",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00069",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00070",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00071",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00072",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00073",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00074",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00075",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00076",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00077",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00078",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00079",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00080",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.55
+  },
+  {
+    "payment_id": "PAY_00081",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00082",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00083",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00084",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00085",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00086",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.55
+  },
+  {
+    "payment_id": "PAY_00087",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00088",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00089",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00090",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00091",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00092",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00093",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00094",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00095",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00096",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00097",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00098",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00099",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00100",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00101",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00102",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00103",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00104",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00105",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00106",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00107",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00108",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00109",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00110",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00111",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00112",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00113",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00114",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00115",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00116",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00117",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00118",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00119",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00120",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00121",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00122",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00123",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00124",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00125",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00126",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00127",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00128",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00129",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00130",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00131",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00132",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00133",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00134",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00135",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00136",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00137",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00138",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00139",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00140",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00141",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00142",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00143",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00144",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00145",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00146",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00147",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00148",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00149",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00150",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00151",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00152",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00153",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00154",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00155",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00156",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00157",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00158",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00159",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00160",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00161",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00162",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00163",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00164",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00165",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00166",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00167",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00168",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00169",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00170",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00171",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00172",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00173",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00174",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00175",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00176",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00177",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00178",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00179",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00180",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00181",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00182",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00183",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00184",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00185",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00186",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00187",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00188",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00189",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00190",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00191",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00192",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00193",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00194",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00195",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00196",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00197",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00198",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00199",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00200",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00201",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00202",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00203",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00204",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00205",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00206",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00207",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00208",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00209",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00210",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00211",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00212",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00213",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00214",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00215",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00216",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00217",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00218",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00219",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00220",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00221",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00222",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00223",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00224",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00225",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00226",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00227",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00228",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00229",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00230",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00231",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00232",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00233",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00234",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00235",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00236",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00237",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00238",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00239",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00240",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00241",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00242",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00243",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00244",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00245",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00246",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00247",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00248",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00249",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00250",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00251",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00252",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00253",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00254",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00255",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00256",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00257",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00258",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00259",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00260",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00261",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00262",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00263",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00264",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00265",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00266",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00267",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00268",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00269",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00270",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00271",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00272",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00273",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00274",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00275",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00276",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00277",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00278",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00279",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00280",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00281",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00282",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00283",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00284",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00285",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00286",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00287",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00288",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00289",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00290",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00291",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00292",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00293",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00294",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00295",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00296",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00297",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00298",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00299",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00300",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00301",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00302",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00303",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00304",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00305",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00306",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00307",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00308",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00309",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00310",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00311",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00312",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00313",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00314",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00315",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00316",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00317",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00318",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00319",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00320",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00321",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00322",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00323",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00324",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00325",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00326",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00327",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00328",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00329",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00330",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00331",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00332",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00333",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00334",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00335",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00336",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00337",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00338",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00339",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00340",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00341",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00342",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00343",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00344",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00345",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00346",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00347",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00348",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00349",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00350",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00351",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00352",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00353",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00354",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00355",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00356",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00357",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00358",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00359",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00360",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00361",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00362",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00363",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00364",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00365",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00366",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00367",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00368",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00369",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00370",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00371",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00372",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00373",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00374",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00375",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00376",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00377",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00378",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00379",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00380",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00381",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00382",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00383",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00384",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00385",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00386",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00387",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00388",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00389",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00390",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00391",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00392",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00393",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00394",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00395",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00396",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00397",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00398",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00399",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00400",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00401",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00402",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00403",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00404",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00405",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00406",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00407",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00408",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00409",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00410",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.55
+  },
+  {
+    "payment_id": "PAY_00411",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00412",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00413",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00414",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00415",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00416",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00417",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00418",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00419",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00420",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00421",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00422",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00423",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00424",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00425",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00426",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00427",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00428",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00429",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00430",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00431",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00432",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00433",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00434",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00435",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.55
+  },
+  {
+    "payment_id": "PAY_00436",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00437",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00438",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00439",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00440",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00441",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00442",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00443",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00444",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00445",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00446",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00447",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00448",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00449",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00450",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.8
+  },
+  {
+    "payment_id": "PAY_00451",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00452",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00453",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00454",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00455",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00456",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00457",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00458",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00459",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00460",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00461",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00462",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00463",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00464",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00465",
+    "diagnosed_cause": "ambiguous",
+    "confidence": 0.3
+  },
+  {
+    "payment_id": "PAY_00466",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00467",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00468",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00469",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00470",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00471",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00472",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00473",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00474",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00475",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00476",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.55
+  },
+  {
+    "payment_id": "PAY_00477",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00478",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00479",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00480",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00481",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00482",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00483",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00484",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00485",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00486",
+    "diagnosed_cause": "afa_stuck",
+    "confidence": 0.6
+  },
+  {
+    "payment_id": "PAY_00487",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00488",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00489",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00490",
+    "diagnosed_cause": "mandate_expired",
+    "confidence": 0.95
+  },
+  {
+    "payment_id": "PAY_00491",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00492",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00493",
+    "diagnosed_cause": "mandate_revoked",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00494",
+    "diagnosed_cause": "insufficient_funds",
+    "confidence": 0.85
+  },
+  {
+    "payment_id": "PAY_00495",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00496",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00497",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00498",
+    "diagnosed_cause": "bank_outage",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00499",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  },
+  {
+    "payment_id": "PAY_00500",
+    "diagnosed_cause": "card_expired",
+    "confidence": 0.9
+  }
+]
