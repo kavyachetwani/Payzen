@@ -12,7 +12,15 @@ from action.nodes import (
     diagnosis_node, decision_node, auto_retry_node,
     card_update_link_node, mandate_resequence_node, escalation_node,
 )
+from action.gate import gate_node
 from action.router import route_to_action
+
+
+def _gate_router(state: dict) -> str:
+    gate = state.get("gate_result", {})
+    if not gate.get("approved", True):
+        return "__end__"
+    return "route"
 
 
 def build_graph():
@@ -20,6 +28,7 @@ def build_graph():
 
     graph.add_node("diagnose", diagnosis_node)
     graph.add_node("decide", decision_node)
+    graph.add_node("gate", gate_node)
     graph.add_node("retry", auto_retry_node)
     graph.add_node("card_update", card_update_link_node)
     graph.add_node("resequence", mandate_resequence_node)
@@ -27,9 +36,20 @@ def build_graph():
 
     graph.set_entry_point("diagnose")
     graph.add_edge("diagnose", "decide")
+    graph.add_edge("decide", "gate")
 
     graph.add_conditional_edges(
-        "decide",
+        "gate",
+        _gate_router,
+        {
+            "__end__": END,
+            "route": "router_passthrough",
+        },
+    )
+
+    graph.add_node("router_passthrough", lambda state: {"gate_result": state.get("gate_result", {})})
+    graph.add_conditional_edges(
+        "router_passthrough",
         route_to_action,
         {
             "auto_retry": "retry",

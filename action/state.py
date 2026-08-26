@@ -13,5 +13,6 @@ class PipelineState(TypedDict, total=False):
     diagnosis: dict
     decision: dict
     constraint_result: dict
+    gate_result: dict
     action_outcome: dict
     audit_entry: dict
