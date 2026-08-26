@@ -69,3 +69,7 @@ High-confidence predictions (>=0.8) are 98.7% correct (75/76). Low-confidence (0
 2. **AFA threshold boundary**: The exact-threshold edge case (Rs 15,000) has `amount_above_afa_threshold=False`, so Rule 5 misses it. This is a data-generation artifact (strictly above vs >=).
 3. **Ambiguous precision**: 75% precision — 1 record that's truly insufficient_funds gets predicted as ambiguous because reason code '59' doesn't match any specific rule.
 4. **No temporal learning**: Rules are static; the engine doesn't learn from retry outcomes. By design — the decision layer (Stage 4+) handles adaptation.
+
+## Known Limitations & Production Improvements
+
+The current BIN-cluster threshold is an absolute count (>=3), calibrated for this dataset's scale (~17 failures/day). In production, this should be replaced with a relative threshold (e.g., 3x the historical average failure rate for that BIN prefix in the same time window) so it scales automatically with merchant transaction volume. A small merchant processing 100 payments/day would correctly flag 3 co-failures as unusual, while a large merchant processing 50,000/day would need a proportionally higher threshold to avoid false positives from normal background decline rates.
