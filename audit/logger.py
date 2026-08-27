@@ -24,16 +24,35 @@ class AuditLogger:
         self._events = []
         self._summaries = {}
 
+        import os
+        creds_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+
         try:
             import firebase_admin
             from firebase_admin import credentials, firestore
+
+            if not creds_path:
+                print(f"  ⚠ GOOGLE_APPLICATION_CREDENTIALS not set — skipping Firestore")
+                raise EnvironmentError("no credentials path")
+
+            if not os.path.exists(creds_path):
+                print(f"  ⚠ Credentials file not found: {creds_path}")
+                raise FileNotFoundError(creds_path)
+
             if not firebase_admin._apps:
-                cred = credentials.ApplicationDefault()
+                cred = credentials.Certificate(creds_path)
                 firebase_admin.initialize_app(cred)
+
             self._db = firestore.client()
             self._using_firestore = True
-        except Exception:
-            print("  ⚠ Firestore unavailable — falling back to local JSON files")
+
+            project_id = firebase_admin.get_app().project_id
+            print(f"  ✓ Firestore connected successfully to project: {project_id}")
+
+        except Exception as e:
+            error_type = type(e).__name__
+            print(f"  ⚠ Firestore unavailable: {error_type}: {e}")
+            print(f"  ⚠ Falling back to local JSON files")
             self._using_firestore = False
 
     @property
