@@ -32,6 +32,12 @@ Thumbs.db
 *.db
 *.sqlite3
 
+# Audit fallback data
+audit/*_fallback.json
+
+# Pipeline DB
+action/pipeline.db
+
 # Pytest
 .pytest_cache/
 htmlcov/
