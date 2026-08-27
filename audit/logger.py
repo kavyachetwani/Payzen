@@ -12,6 +12,9 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 FALLBACK_DIR = Path(__file__).parent
 EVENTS_FALLBACK = FALLBACK_DIR / "audit_events_fallback.json"
 SUMMARY_FALLBACK = FALLBACK_DIR / "audit_summary_fallback.json"
