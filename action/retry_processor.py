@@ -99,6 +99,17 @@ def process_retry_event(event: dict, payment_records: dict,
     customer_id = record["customer_id"]
     retry_time = clock.now()
 
+    # Re-check DND and record current action in constraint tracker
+    if is_dnd(customer_id) and action in ("sms_then_retry", "call_then_retry"):
+        action = "auto_retry"
+        cost = ACTION_COSTS.get(action, 0.0)
+
+    ct_result = constraint_tracker.apply_constraints(
+        action, customer_id, retry_time, payment_id
+    )
+    action = ct_result["action"]
+    cost = ACTION_COSTS.get(action, 0.0)
+
     success = simulate_retry_outcome(cause, action, attempt_number, retry_time, rng)
 
     attempt_entry = {
@@ -123,6 +134,7 @@ def process_retry_event(event: dict, payment_records: dict,
             "amount_recovered": amount,
             "action_cost": cost,
             "retry_time": retry_time,
+            "actual_action": action,
         }
 
     cap = max_attempts(cause)
@@ -135,6 +147,7 @@ def process_retry_event(event: dict, payment_records: dict,
             "action_cost": cost,
             "retry_time": retry_time,
             "reason": f"exhausted {cap} attempts for {cause}",
+            "actual_action": action,
         }
 
     next_attempt = attempt_number + 1
@@ -223,4 +236,5 @@ def process_retry_event(event: dict, payment_records: dict,
         "next_attempt": next_attempt,
         "next_action": final_action,
         "next_time": scheduled_time,
+        "actual_action": action,
     }

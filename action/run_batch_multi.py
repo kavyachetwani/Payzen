@@ -237,6 +237,10 @@ def run():
 
         clock.set(failure_time)
 
+        # DND check before scheduling contact actions
+        if r["customer_id"] in dnd_set and action in ("sms_then_retry", "call_then_retry"):
+            action = "auto_retry"
+
         delay_hours = 6.0
         scheduled_time = failure_time + timedelta(hours=delay_hours)
 
@@ -254,6 +258,12 @@ def run():
             if action == "call_then_retry":
                 from decision.constraints import clamp_call_to_rbi_hours
                 scheduled_time = clamp_call_to_rbi_hours(scheduled_time)
+
+        # Apply constraints and record contact in tracker
+        ct_result = constraint_tracker.apply_constraints(
+            action, r["customer_id"], scheduled_time, r["payment_id"]
+        )
+        action = ct_result["action"]
 
         event_queue.enqueue(
             event_type="retry_attempt",
@@ -340,16 +350,18 @@ def run():
         days_since = (scheduled_time - failure_time).total_seconds() / 86400
         payday_dist = scheduled_time.day - 1
 
+        actual_action = result.get("actual_action", payload["action_type"])
+
         logger.log_event({
             "payment_id": pid,
             "customer_id": r["customer_id"],
             "event_type": "retry_attempt" if result["status"] != "escalated" else "escalation_after_exhaustion",
             "attempt_number": result["attempt_number"],
             "sim_timestamp": scheduled_time.isoformat(),
-            "action_type": payload["action_type"],
+            "action_type": actual_action,
             "bandit_recommended_action": payload["action_type"],
-            "actual_action": payload["action_type"],
-            "downgrade_reason": None,
+            "actual_action": actual_action,
+            "downgrade_reason": None if actual_action == payload["action_type"] else "constraint_downgrade",
             "gate_mode": "auto_approve",
             "gate_approved": True,
             "compliance_notes": [],
