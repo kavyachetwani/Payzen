@@ -201,6 +201,12 @@ function OverviewPage({ overview, onNavigateTable }) {
   }))
 
   const roi = o.total_cost > 0 ? Math.round(o.net_recovered / o.total_cost) : 0
+  const hasPending = o.pending_count > 0
+  const projNet = o.projected_net || o.net_recovered
+  const projRate = o.projected_rate || o.recovery_rate
+  const displayNet = hasPending ? projNet : o.net_recovered
+  const displayRate = hasPending ? projRate : o.recovery_rate
+  const projLabel = hasPending ? 'projected' : 'actual'
 
   return (
     <div className="space-y-8 pb-12">
@@ -260,22 +266,28 @@ function OverviewPage({ overview, onNavigateTable }) {
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Recovery Results</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
-            <p className="text-sm text-emerald-500 font-medium mb-1">Net Recovered</p>
-            <p className="text-4xl font-bold text-emerald-600">{fmt(o.net_recovered)}</p>
+            <p className="text-sm text-emerald-500 font-medium mb-1">Net Recovered {hasPending && <span className="text-xs text-gray-400">({projLabel})</span>}</p>
+            <p className="text-4xl font-bold text-emerald-600">{fmt(displayNet)}</p>
             <p className="text-sm text-emerald-400 mt-1">from {fmtFull(o.total_at_risk)} at risk</p>
+            {hasPending && (
+              <p className="text-xs text-gray-400 mt-1">{o.pending_count} actions pending &middot; actual so far: {fmt(o.net_recovered)}</p>
+            )}
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
-            <p className="text-sm text-blue-500 font-medium mb-1">Recovery Rate</p>
+            <p className="text-sm text-blue-500 font-medium mb-1">Recovery Rate {hasPending && <span className="text-xs text-gray-400">({projLabel})</span>}</p>
             <div className="relative w-24 h-24 mx-auto my-2">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="#dbeafe" strokeWidth="8" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke="#3b82f6" strokeWidth="8"
-                  strokeDasharray={`${o.recovery_rate * 264} 264`} strokeLinecap="round" />
+                  strokeDasharray={`${displayRate * 264} 264`} strokeLinecap="round" />
               </svg>
               <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-blue-600">
-                {pct(o.recovery_rate)}
+                {pct(displayRate)}
               </span>
             </div>
+            {hasPending && (
+              <p className="text-xs text-gray-400">actual so far: {pct(o.recovery_rate)}</p>
+            )}
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center">
             <p className="text-sm text-purple-500 font-medium mb-1">ROI</p>
@@ -295,15 +307,28 @@ function OverviewPage({ overview, onNavigateTable }) {
             <p className="text-sm text-gray-400 mt-1">12.6% rate</p>
           </div>
           <div className="text-center">
-            <div className="bg-emerald-100 rounded-full px-4 py-2 inline-block">
-              <p className="text-2xl font-bold text-emerald-600">+{(((o.net_recovered - NAIVE_BASELINE) / NAIVE_BASELINE) * 100).toFixed(1)}%</p>
-              <p className="text-xs text-emerald-500">more revenue recovered</p>
-            </div>
+            {(() => {
+              const diff = ((displayNet - NAIVE_BASELINE) / NAIVE_BASELINE) * 100
+              const sign = diff >= 0 ? '+' : ''
+              return (
+                <div className={`${diff >= 0 ? 'bg-emerald-100' : 'bg-red-100'} rounded-full px-4 py-2 inline-block`}>
+                  <p className={`text-2xl font-bold ${diff >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{sign}{diff.toFixed(1)}%</p>
+                  <p className={`text-xs ${diff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {diff >= 0 ? 'more' : 'less'} revenue recovered
+                  </p>
+                </div>
+              )
+            })()}
           </div>
           <div className="text-center bg-emerald-50 rounded-xl p-5 border border-emerald-200">
-            <p className="text-xs text-emerald-500 uppercase tracking-wider mb-1">Smart Recovery</p>
-            <p className="text-3xl font-bold text-emerald-600">{fmt(o.net_recovered)}</p>
-            <p className="text-sm text-emerald-500 mt-1">{pct(o.recovery_rate)} rate</p>
+            <p className="text-xs text-emerald-500 uppercase tracking-wider mb-1">
+              Smart Recovery {hasPending && <span className="text-gray-400">({projLabel})</span>}
+            </p>
+            <p className="text-3xl font-bold text-emerald-600">{fmt(displayNet)}</p>
+            <p className="text-sm text-emerald-500 mt-1">{pct(displayRate)} rate</p>
+            {hasPending && (
+              <p className="text-xs text-gray-400 mt-1">actual so far: {fmt(o.net_recovered)}</p>
+            )}
           </div>
         </div>
       </section>

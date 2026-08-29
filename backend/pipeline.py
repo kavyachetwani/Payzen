@@ -629,11 +629,13 @@ class PipelineServer:
         total_cost = sum(s.get("total_action_cost", 0) for s in resolved)
         net_recovered = total_recovered - total_cost
 
-        # Action distribution from events
+        # Action distribution from events + pending proposals
         action_counts = Counter()
         for e in events:
             at = e.get("action_type", e.get("actual_action", "unknown"))
             action_counts[at] += 1
+        for pa in self.pending_actions.values():
+            action_counts[pa.get("recommended_action", "unknown")] += 1
 
         # Attempt distribution from summaries
         attempt_dist = Counter()
@@ -663,8 +665,10 @@ class PipelineServer:
         # Pending count
         pending_count = len(self.pending_actions)
 
-        # Cause distribution from summaries
-        cause_dist = Counter(s.get("diagnosed_cause", "unknown") for s in summaries)
+        # Cause distribution from ALL 500 diagnoses (not just executed)
+        cause_dist = Counter(
+            d.get("cause", "unknown") for d in self.diagnosis_cache.values()
+        )
 
         # Bank distribution with cause breakdown
         bank_stats = defaultdict(lambda: {"total": 0, "causes": Counter()})
@@ -710,6 +714,22 @@ class PipelineServer:
             "gate_blocked": {"count": len(blocked), "amount": round(sum(s["amount"] for s in blocked), 0)},
         }
 
+        # Projected recovery from pending actions using bandit success rates
+        from action.retry_processor import _load_success_rates
+        rates = _load_success_rates()
+        pending_amount = sum(pa["amount"] for pa in self.pending_actions.values())
+        projected_pending = 0.0
+        for pa in self.pending_actions.values():
+            cause = pa.get("cause", "unknown")
+            action = pa.get("recommended_action", "auto_retry")
+            attempt = pa.get("attempt_number", 1)
+            base_rate = rates.get((cause, action), 0.10)
+            decay = {1: 1.0, 2: 0.85, 3: 0.65}.get(attempt, 0.5)
+            projected_pending += pa["amount"] * base_rate * decay
+
+        projected_net = net_recovered + projected_pending
+        projected_rate = round(projected_net / total_at_risk, 4) if total_at_risk > 0 else 0
+
         return {
             "total_payments": len(self.records),
             "total_at_risk": round(total_at_risk, 2),
@@ -717,6 +737,9 @@ class PipelineServer:
             "total_cost": round(total_cost, 2),
             "net_recovered": round(net_recovered, 2),
             "recovery_rate": round(net_recovered / total_at_risk, 4) if total_at_risk > 0 else 0,
+            "projected_net": round(projected_net, 2),
+            "projected_rate": projected_rate,
+            "pending_amount": round(pending_amount, 2),
             "resolved_count": len(summaries),
             "pending_count": pending_count,
             "action_distribution": dict(action_counts),
