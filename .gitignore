@@ -42,3 +42,7 @@ action/pipeline.db
 .pytest_cache/
 htmlcov/
 .coverage
+
+# Dashboard
+dashboard/node_modules/
+dashboard/dist/
