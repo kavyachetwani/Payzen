@@ -637,9 +637,11 @@ class PipelineServer:
 
         # Attempt distribution from summaries
         attempt_dist = Counter()
+        retryable_count = 0
         for s in summaries:
             if not s.get("is_retryable"):
                 continue
+            retryable_count += 1
             fo = s.get("final_outcome", "")
             if fo == "recovered":
                 attempt_dist[f"attempt_{s.get('total_attempts', 1)}"] += 1
@@ -649,12 +651,64 @@ class PipelineServer:
         # Compliance
         gate_blocks = sum(1 for s in summaries if s.get("final_outcome") == "gate_blocked")
         dnd_blocks = gate_blocks
+        pre_debit_forces = sum(
+            1 for e in events
+            for n in e.get("compliance_notes", [])
+            if "pre-debit" in n.lower()
+        )
 
         # Outcome distribution
         outcome_counts = Counter(s.get("final_outcome", "unknown") for s in summaries)
 
         # Pending count
         pending_count = len(self.pending_actions)
+
+        # Cause distribution from summaries
+        cause_dist = Counter(s.get("diagnosed_cause", "unknown") for s in summaries)
+
+        # Bank distribution with cause breakdown
+        bank_stats = defaultdict(lambda: {"total": 0, "causes": Counter()})
+        for s in summaries:
+            bank = s.get("bank_name", "Unknown")
+            bank_stats[bank]["total"] += 1
+            bank_stats[bank]["causes"][s.get("diagnosed_cause", "unknown")] += 1
+        bank_data = [
+            {"bank": bank, "count": data["total"], "causes": dict(data["causes"])}
+            for bank, data in sorted(bank_stats.items(), key=lambda x: -x[1]["total"])
+        ]
+
+        # Recovery timeline — cumulative by simulated day
+        daily_recovery = defaultdict(float)
+        daily_cost = defaultdict(float)
+        for e in events:
+            ts = e.get("sim_timestamp", "")[:10]
+            if ts:
+                daily_recovery[ts] += e.get("amount_recovered", 0)
+                daily_cost[ts] += e.get("action_cost", 0)
+        cumulative = 0
+        cumulative_cost = 0
+        timeline = []
+        for day in sorted(set(daily_recovery.keys()) | set(daily_cost.keys())):
+            cumulative += daily_recovery[day]
+            cumulative_cost += daily_cost[day]
+            timeline.append({
+                "date": day,
+                "recovered": round(cumulative, 0),
+                "net": round(cumulative - cumulative_cost, 0),
+            })
+
+        # Exception categories with amounts
+        exhausted = [s for s in summaries if s.get("final_outcome") == "failed_exhausted"]
+        escalated = [s for s in summaries if s.get("final_outcome") == "escalated"]
+        pending_nr = [s for s in summaries if s.get("final_outcome") in ("card_update_sent", "mandate_resequenced")]
+        blocked = [s for s in summaries if s.get("final_outcome") == "gate_blocked"]
+
+        exceptions = {
+            "exhausted": {"count": len(exhausted), "amount": round(sum(s["amount"] for s in exhausted), 0)},
+            "escalated": {"count": len(escalated), "amount": round(sum(s["amount"] for s in escalated), 0)},
+            "pending_nr": {"count": len(pending_nr), "amount": round(sum(s["amount"] for s in pending_nr), 0)},
+            "gate_blocked": {"count": len(blocked), "amount": round(sum(s["amount"] for s in blocked), 0)},
+        }
 
         return {
             "total_payments": len(self.records),
@@ -668,9 +722,15 @@ class PipelineServer:
             "action_distribution": dict(action_counts),
             "attempt_distribution": dict(attempt_dist),
             "outcome_distribution": dict(outcome_counts),
+            "cause_distribution": dict(cause_dist),
+            "bank_data": bank_data,
+            "timeline": timeline,
+            "retryable_count": retryable_count,
+            "exceptions": exceptions,
             "compliance": {
                 "dnd_blocks": dnd_blocks,
                 "gate_blocks": gate_blocks,
+                "pre_debit_forces": pre_debit_forces,
             },
             "events_logged": len(events),
             "summaries_logged": len(summaries),
