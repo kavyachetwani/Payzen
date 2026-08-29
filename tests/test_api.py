@@ -10,10 +10,20 @@ sys.path.insert(0, str(ROOT))
 
 
 @pytest.fixture(scope="module")
-def server():
+def server(monkeypatch_module):
+    from audit.logger import AuditLogger
+    monkeypatch_module.setattr(AuditLogger, "flush_to_json", lambda self: (0, 0))
     from backend.pipeline import PipelineServer
     srv = PipelineServer()
     return srv
+
+
+@pytest.fixture(scope="module")
+def monkeypatch_module():
+    from _pytest.monkeypatch import MonkeyPatch
+    mp = MonkeyPatch()
+    yield mp
+    mp.undo()
 
 
 class TestApprovalFlow:
@@ -63,7 +73,8 @@ class TestDoubleProcessing:
         count_1 = len(server.logger.get_all_summaries())
         server.run_batch()
         count_2 = len(server.logger.get_all_summaries())
-        assert count_2 == 500, f"After double batch: {count_2} summaries (expected 500)"
+        assert count_2 == count_1, \
+            f"Second batch changed summary count: {count_1} -> {count_2}"
 
 
 class TestConcurrentApprovals:

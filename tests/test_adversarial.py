@@ -33,6 +33,7 @@ def _base_record():
         "ground_truth_cause": "insufficient_funds",
         "customer_prior_success_count": 5,
         "customer_prior_failure_count": 1,
+        "mandate_id": "M_ADV_001",
     }
 
 

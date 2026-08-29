@@ -17,10 +17,14 @@ DATA_PATH = ROOT / "data" / "failed_payments.json"
 EVENTS_PATH = ROOT / "audit" / "audit_events_fallback.json"
 SUMMARY_PATH = ROOT / "audit" / "audit_summary_fallback.json"
 
+_RECORDS = json.loads(DATA_PATH.read_text())
+_EVENTS = json.loads(EVENTS_PATH.read_text()) if EVENTS_PATH.exists() else None
+_SUMMARIES = json.loads(SUMMARY_PATH.read_text()) if SUMMARY_PATH.exists() else None
+
 
 @pytest.fixture(scope="session")
 def records():
-    return json.loads(DATA_PATH.read_text())
+    return _RECORDS
 
 
 @pytest.fixture(scope="session")
@@ -30,13 +34,13 @@ def record_map(records):
 
 @pytest.fixture(scope="session")
 def events():
-    if not EVENTS_PATH.exists():
+    if _EVENTS is None:
         pytest.skip("No audit events file — run batch first")
-    return json.loads(EVENTS_PATH.read_text())
+    return _EVENTS
 
 
 @pytest.fixture(scope="session")
 def summaries():
-    if not SUMMARY_PATH.exists():
+    if _SUMMARIES is None:
         pytest.skip("No audit summary file — run batch first")
-    return json.loads(SUMMARY_PATH.read_text())
+    return _SUMMARIES

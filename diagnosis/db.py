@@ -129,6 +129,76 @@ def load_data(conn: sqlite3.Connection, data_path: str | Path = DATA_PATH) -> in
     return len(records)
 
 
+def build_db(records: list[dict], db_path: str = ":memory:") -> sqlite3.Connection:
+    """Build an in-memory (or on-disk) DB from a list of record dicts."""
+    conn = get_connection(db_path)
+    create_schema(conn)
+    _load_records(conn, records)
+    return conn
+
+
+def _load_records(conn: sqlite3.Connection, records: list[dict]) -> int:
+    banks = {}
+    customers = {}
+    mandates = {}
+
+    for r in records:
+        bname = r.get("bank_name", "UNKNOWN")
+        if bname not in banks:
+            banks[bname] = set()
+        raw_bin = r.get("bin", "")
+        if len(raw_bin) >= 4:
+            banks[bname].add(raw_bin[:4])
+
+        cid = r.get("customer_id", "")
+        customers[cid] = (r.get("customer_prior_success_count", 0),
+                          r.get("customer_prior_failure_count", 0))
+
+        mid = r.get("mandate_id", f"M_{r.get('payment_id', '')}")
+        mandates[mid] = (cid, r.get("mandate_expiry_date", ""))
+
+    conn.executemany(
+        "INSERT OR REPLACE INTO banks VALUES (?, ?)",
+        [(name, ",".join(sorted(prefixes))) for name, prefixes in banks.items()],
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO customers VALUES (?, ?, ?)",
+        [(cid, sc, fc) for cid, (sc, fc) in customers.items()],
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO mandates VALUES (?, ?, ?)",
+        [(mid, cid, exp) for mid, (cid, exp) in mandates.items()],
+    )
+
+    for r in records:
+        raw_bin = r.get("bin", "")
+        bin_prefix = raw_bin[:4] if len(raw_bin) >= 4 else ""
+        mid = r.get("mandate_id", f"M_{r.get('payment_id', '')}")
+        conn.execute(
+            """INSERT OR REPLACE INTO payments VALUES
+               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                r["payment_id"], r.get("customer_id", ""),
+                mid,
+                r.get("amount", 0), r.get("payment_category", "emi"),
+                r.get("payment_method", "enach"),
+                r.get("bank_name", "UNKNOWN"), raw_bin, bin_prefix,
+                r.get("failure_timestamp", "2026-01-05T14:30:00"),
+                r.get("failure_reason_code", "51"),
+                int(r.get("amount_above_afa_threshold", 0)),
+                int(r.get("pre_debit_notification_sent", True)),
+                r.get("mandate_expiry_date", ""),
+            ),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO ground_truth VALUES (?, ?)",
+            (r["payment_id"], r.get("ground_truth_cause", "unknown")),
+        )
+
+    conn.commit()
+    return len(records)
+
+
 def init_db(db_path: str | Path = DB_PATH, data_path: str | Path = DATA_PATH) -> sqlite3.Connection:
     conn = get_connection(db_path)
     create_schema(conn)
