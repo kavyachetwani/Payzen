@@ -1,0 +1,273 @@
+scenario: too_expensive
+description: Customer cancelled mandate because the service costs too much
+goal: Offer downgrade or cheaper plan to retain
+
+conversations:
+  - id: exp_01
+    category: emi
+    amount: 15000
+    turns:
+      - role: agent
+        text: "Namaste! Main {brand_name} se bol raha hoon. Aapka ₹{amount} ka EMI mandate cancel hua hai. Kya main jaanaa sakta hoon ki koi issue tha?"
+      - role: customer
+        text: "Haan, bahut zyada ho gaya monthly. Afford nahi ho raha ab."
+      - role: agent
+        text: "Main samajh sakta hoon, ₹15,000 monthly kaafi amount hai. Agar aap interested ho toh humare paas ek chhota plan hai — ₹9,000/month mein same features milenge. Kya aap consider karenge?"
+      - role: customer
+        text: "₹9,000? Hmm... woh toh theek hai actually."
+      - role: agent
+        text: "Bahut accha! Main aapke liye ₹9,000/month ka plan set kar deta hoon. Naya mandate link aapko SMS pe aa jayega. Dhanyavaad ji!"
+    outcome: interested_in_downgrade
+    offered_amount: 9000
+
+  - id: exp_02
+    category: subscription
+    amount: 999
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call hai. Aapne apna ₹{amount}/month subscription cancel kiya hai. Kya sab theek hai?"
+      - role: customer
+        text: "Use nahi kar raha tha, aur ₹999 bhi zyada lag raha tha."
+      - role: agent
+        text: "Samajh mein aata hai. Humare paas ek basic plan hai ₹499/month ka — usme core features sab milte hain. Kya woh better rahega aapke liye?"
+      - role: customer
+        text: "₹499 toh chalega. Kaise activate karna hai?"
+      - role: agent
+        text: "Bahut simple hai — main abhi aapko ek link bhej raha hoon SMS pe. Uspe tap karke naya mandate set ho jayega. Thank you!"
+    outcome: interested_in_downgrade
+    offered_amount: 499
+
+  - id: exp_03
+    category: sip
+    amount: 5000
+    turns:
+      - role: agent
+        text: "Namaste ji! {brand_name} se hoon. Aapka ₹{amount} ka SIP mandate cancel ho gaya hai. Kya main help kar sakta hoon?"
+      - role: customer
+        text: "Haan cancel kiya maine khud. Abhi financial situation tight hai, 2-3 months baad dekhta hoon."
+      - role: agent
+        text: "Bilkul samajhta hoon. Ek option hai — aap SIP amount ₹2,000 tak reduce kar sakte ho temporarily. Investment continue rahega aur amount baad mein badha sakte ho. Kya yeh kaam karega?"
+      - role: customer
+        text: "Nahi, abhi completely rok dena chahta hoon. Baad mein khud start kar loonga."
+      - role: agent
+        text: "Koi baat nahi ji, bilkul aapki marzi. Jab bhi restart karna ho, app se directly kar sakte ho. Aapka din accha jaaye!"
+    outcome: refused
+
+  - id: exp_04
+    category: insurance
+    amount: 2500
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} insurance se bol rahi hoon. Aapki ₹{amount}/month ki premium mandate cancel hui hai. Kya main kuch help kar sakti hoon?"
+      - role: customer
+        text: "Premium bahut badh gayi hai pichle saal se. Pehle ₹1,800 thi."
+      - role: agent
+        text: "Aapki baat sahi hai, premium increase hua hai. Main aapke liye ek option check karti hoon — ₹1,500/month ka plan available hai jisme basic coverage milegi. Kya aap interested hain?"
+      - role: customer
+        text: "₹1,500 toh accha hai. Par coverage same rahega?"
+      - role: agent
+        text: "Basic coverage hogi — hospitalization aur accidental included hai. Main aapko details SMS kar deti hoon plan ke saath. Agar pasand aaye toh mandate link bhi hoga usme."
+    outcome: interested_in_downgrade
+    offered_amount: 1500
+
+  - id: exp_05
+    category: emi
+    amount: 25000
+    turns:
+      - role: agent
+        text: "Hello ji, {brand_name} se call hai. Aapka ₹{amount} ka EMI payment mandate cancel hua hai. Kya sab theek hai?"
+      - role: customer
+        text: "Job chali gayi last month. EMI bharna possible nahi hai abhi."
+      - role: agent
+        text: "Main samajh sakta hoon, bahut mushkil situation hai. Kya aap ek chhota amount jaise ₹10,000/month manage kar sakte ho? Hum tenure extend kar denge."
+      - role: customer
+        text: "₹10,000 bhi mushkil hai abhi. 3 months baad dekh sakta hoon."
+      - role: agent
+        text: "Koi baat nahi ji. Main aapka case note kar leta hoon. Jab aap ready ho, humein call kar lijiye — hum aapke liye best plan banayenge. Take care."
+    outcome: wants_callback
+
+  - id: exp_06
+    category: subscription
+    amount: 1499
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. Aapne ₹{amount}/month subscription cancel kiya. Koi problem thi kya service mein?"
+      - role: customer
+        text: "Problem nahi thi, bas budget tight hai is month."
+      - role: agent
+        text: "Samajhta hoon. Agar sirf is month ki baat hai toh hum payment 2 weeks postpone kar sakte hain. Ya phir ₹799/month ka lite plan bhi hai. Kya koi option suit karega?"
+      - role: customer
+        text: "2 weeks postpone ho sakta hai? Woh kar do please."
+      - role: agent
+        text: "Done! Aapka next payment 15 tarik ko schedule ho jayega. SMS confirmation aa jayegi. Thank you ji!"
+    outcome: promise_to_pay
+
+  - id: exp_07
+    category: cc_bill
+    amount: 8500
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} credit card se bol raha hoon. Aapka ₹{amount} ka auto-debit mandate cancel hua hai. Kya main kuch help kar sakta hoon?"
+      - role: customer
+        text: "Card ki limit bahut zyada use ho gayi thi. Auto-debit se aur charge lag raha tha."
+      - role: agent
+        text: "Samajhta hoon. Agar aap minimum payment ₹2,500 ka mandate set karna chahein toh late fees se bach jayenge. Kya yeh option accha lagta hai?"
+      - role: customer
+        text: "Minimum payment ka mandate? Haan woh toh kar sakta hoon."
+      - role: agent
+        text: "Perfect! ₹2,500/month ka mandate link bhej raha hoon. Interest bhi kam lagega. Dhanyavaad!"
+    outcome: interested_in_downgrade
+    offered_amount: 2500
+
+  - id: exp_08
+    category: emi
+    amount: 35000
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se hoon. Aapka ₹{amount} ka EMI mandate cancel ho gaya. Kya baat hui?"
+      - role: customer
+        text: "Nahi chahiye. Band karo."
+      - role: agent
+        text: "Bilkul ji, aapki marzi. Koi aur help chahiye toh humein call kar lijiyega. Dhanyavaad, accha din ho aapka."
+    outcome: refused
+
+  - id: exp_09
+    category: subscription
+    amount: 599
+    turns:
+      - role: agent
+        text: "Hi ji! {brand_name} se bol rahi hoon. Aapka ₹{amount}/month subscription cancel hua. Kuch zyada lag raha tha kya?"
+      - role: customer
+        text: "Haan thoda zyada hai mere liye. ₹300 hota toh chalata."
+      - role: agent
+        text: "Actually humare paas ₹299/month ka starter plan hai! Same app, thoda kam content. Kya try karna chahenge?"
+      - role: customer
+        text: "₹299? Haan woh chalega bilkul!"
+      - role: agent
+        text: "Great! Link bhej rahi hoon abhi. Tap karke mandate set ho jayega. Enjoy kijiye!"
+    outcome: interested_in_downgrade
+    offered_amount: 299
+
+  - id: exp_10
+    category: sip
+    amount: 10000
+    turns:
+      - role: agent
+        text: "Namaste ji, {brand_name} se hoon. Aapki ₹{amount}/month SIP mandate cancel hui hai. Kya main kuch jaanaa sakta hoon?"
+      - role: customer
+        text: "Ghar ka renovation chal raha hai, saara paisa udhar lag raha hai. SIP 6 months baad start karunga."
+      - role: agent
+        text: "Bilkul, renovation mein toh bahut paisa jaata hai. Ek option hai — ₹3,000/month ka SIP continue kar sakte ho, investment break nahi hoga. Baad mein wapas ₹10,000 kar lena."
+      - role: customer
+        text: "Nahi yaar, abhi kuch bhi nahi daal sakta. Baad mein dekhunga."
+      - role: agent
+        text: "No problem ji. Jab bhi ready ho, app se directly SIP restart kar sakte ho. All the best renovation ke liye!"
+    outcome: refused
+
+  - id: exp_11
+    category: insurance
+    amount: 3200
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se call hai. Aapki ₹{amount}/month insurance premium mandate cancel hui. Kya sab theek hai?"
+      - role: customer
+        text: "Zyada lagti hai premium. Doosri company mein sasta mil raha hai."
+      - role: agent
+        text: "Accha ji, aap compare kar rahe hain toh accha hai. Humare paas bhi ₹1,800/month ka plan hai. Coverage compare kar ke dekhiyega — agar humara suit kare toh bata dijiye."
+      - role: customer
+        text: "₹1,800 mein kya milega?"
+      - role: agent
+        text: "₹5L health cover, ₹10L accidental, aur no-claim bonus bhi continue rahega kyunki aap existing customer ho. Details SMS kar deta hoon."
+    outcome: interested_in_downgrade
+    offered_amount: 1800
+
+  - id: exp_12
+    category: emi
+    amount: 12000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol raha hoon. Aapka ₹{amount} ka EMI mandate cancel hua. Koi issue tha?"
+      - role: customer
+        text: "Wife ka medical expense aa gaya suddenly. 2 months ke liye rok dena hai."
+      - role: agent
+        text: "Oh, hope she's doing better. Main aapke liye 2 month moratorium request daal deta hoon — EMI 2 months skip hoga, tenure extend ho jayega. Theek hai?"
+      - role: customer
+        text: "Haan please, woh kar do. Thank you."
+      - role: agent
+        text: "Done ji. 2 months baad se ₹12,000/month wapas start hoga. Confirmation SMS aa jayega. Wife ki jaldi recovery ki dua karta hoon."
+    outcome: promise_to_pay
+
+  - id: exp_13
+    category: subscription
+    amount: 2999
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. Aapne ₹{amount}/month plan cancel kiya. Kya zyada lag raha tha?"
+      - role: customer
+        text: "Features ke hisaab se zyada hai. Aadhe features use hi nahi karta."
+      - role: agent
+        text: "Makes sense. Humare paas ₹1,499/month ka plan hai jisme sirf core features hain — jo aap use karte ho woh sab included hai. Kya dekhna chahenge?"
+      - role: customer
+        text: "Haan dikhao, kya kya hai usme."
+      - role: agent
+        text: "SMS mein plan details bhej raha hoon comparison ke saath. Pasand aaye toh usme mandate link bhi hai. Thanks ji!"
+    outcome: interested_in_downgrade
+    offered_amount: 1499
+
+  - id: exp_14
+    category: emi
+    amount: 45000
+    turns:
+      - role: agent
+        text: "Hello ji, {brand_name} finance se call. Aapka ₹{amount} ka EMI mandate cancel hua hai. Kya baat hui?"
+      - role: customer
+        text: "Business mein loss hua hai. EMI bharna bahut mushkil hai."
+      - role: agent
+        text: "Bahut tough situation hai, samajh raha hoon. Ek option hai — tenure double karke EMI ₹25,000/month kar sakte hain. Thoda breathing room mil jayega."
+      - role: customer
+        text: "₹25,000 bhi zyada hai. ₹15,000 ho sakta hai kya?"
+      - role: agent
+        text: "Main ₹15,000 ka request dal deta hoon approval ke liye. 24 hours mein confirmation aa jayegi. Tab tak aapko koi reminder nahi aayega."
+    outcome: interested_in_downgrade
+    offered_amount: 15000
+
+  - id: exp_15
+    category: sip
+    amount: 2000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka ₹{amount}/month SIP mandate cancel hua. Kya help chahiye?"
+      - role: customer
+        text: "₹2,000 toh bahut nahi hai par abhi har jagah expense cut kar raha hoon."
+      - role: agent
+        text: "Samajhta hoon, har penny matters. ₹500/month ka micro SIP bhi possible hai — investment habit nahi tootegi."
+      - role: customer
+        text: "₹500 mein kya fayda hoga?"
+      - role: agent
+        text: "Compounding ka magic hai ji — ₹500/month bhi 10 saal mein ₹1L+ ban sakta hai. Chhota start, bada result. Link bhejoon?"
+      - role: customer
+        text: "Hmm... theek hai, ₹500 se start karte hain."
+      - role: agent
+        text: "Bahut accha decision! Link aa raha hai SMS pe. Best of luck!"
+    outcome: interested_in_downgrade
+    offered_amount: 500
+
+  - id: exp_16
+    category: subscription
+    amount: 799
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se bol raha hoon. ₹{amount}/month subscription cancel hua. Budget issue hai?"
+      - role: customer
+        text: "Haan, bahut saare subscriptions hain. Kuch toh cut karna padega."
+      - role: agent
+        text: "Sahi baat hai, subscription fatigue real hai. Humare annual plan mein ₹499/month padta hai — 2 months free. Kya annual consider karenge?"
+      - role: customer
+        text: "Annual matlab ek baar mein kitna pay karna hoga?"
+      - role: agent
+        text: "₹5,999 ek baar mein, effectively ₹499/month. Monthly se ₹3,600 ki saving hogi saal mein."
+      - role: customer
+        text: "Abhi nahi, par next month sochta hoon. Remind kar dena."
+      - role: agent
+        text: "Zaroor! Main next month 1 tarik ko reminder set kar deta hoon. Dhanyavaad ji!"
+    outcome: wants_callback

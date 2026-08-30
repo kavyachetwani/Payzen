@@ -1,0 +1,204 @@
+scenario: accidental
+description: Customer cancelled mandate by mistake or didn't intend to
+goal: Offer quick re-enrollment with minimal friction
+
+conversations:
+  - id: acc_01
+    category: emi
+    amount: 15000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka ₹{amount} ka EMI mandate cancel ho gaya hai. Kya aapne intentionally kiya tha?"
+      - role: customer
+        text: "Nahi nahi! Galti se ho gaya. Bank app mein kuch aur kar raha tha."
+      - role: agent
+        text: "Koi baat nahi, hota hai! Main abhi ek naya mandate link bhej deta hoon — ek tap mein wapas set ho jayega. Koi extra charge nahi lagega."
+      - role: customer
+        text: "Haan please jaldi bhej do, EMI miss nahi hona chahiye."
+      - role: agent
+        text: "Bhej diya! Link pe tap karo — 2 minute mein done. Next EMI time pe kat jayega. Tension mat lo!"
+    outcome: promise_to_pay
+
+  - id: acc_02
+    category: subscription
+    amount: 499
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Aapka subscription cancel hua. Kya sab theek hai?"
+      - role: customer
+        text: "Cancel? Maine toh nahi kiya! Kab hua yeh?"
+      - role: agent
+        text: "Kal raat 11 baje mandate cancel hua bank end se. Shayad koi banking app update ya accidental touch ho gaya ho."
+      - role: customer
+        text: "Haan kal raat bank app update kiya tha. Usme ho gaya hoga."
+      - role: agent
+        text: "Samajh gaya. Link bhej raha hoon — ek click mein wapas active ho jayega. Sab data safe hai."
+      - role: customer
+        text: "Thanks, abhi kar leta hoon."
+      - role: agent
+        text: "Great! Agar koi issue ho toh call kar lena. Have a good day!"
+    outcome: promise_to_pay
+
+  - id: acc_03
+    category: sip
+    amount: 5000
+    turns:
+      - role: agent
+        text: "Hello ji! {brand_name} se hoon. Aapka SIP mandate cancel ho gaya. Kya yeh planned tha?"
+      - role: customer
+        text: "Nahi! Meri beti phone se khel rahi thi, usne kuch kar diya shayad."
+      - role: agent
+        text: "Haha, bacche aur phones! Koi tension nahi — link bhej raha hoon, ek minute mein SIP wapas start ho jayega."
+      - role: customer
+        text: "Shukriya! Aur ek baat — SIP ki koi payment miss toh nahi hogi?"
+      - role: agent
+        text: "Agar aaj set kar loge toh next scheduled date pe normal deduction ho jayega. Koi penalty nahi. Link check karo SMS mein!"
+    outcome: promise_to_pay
+
+  - id: acc_04
+    category: insurance
+    amount: 2500
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} insurance se hoon. Aapki premium mandate cancel hui hai. Kya aapne kiya tha?"
+      - role: customer
+        text: "Mujhe toh pata hi nahi tha! Premium cancel? Policy toh active hai na?"
+      - role: agent
+        text: "Policy abhi active hai — 30 din ka grace period hota hai. Agar us mein mandate wapas set kar lein toh koi break nahi aayega."
+      - role: customer
+        text: "Oh thank god. Haan jaldi kar do, policy lapse nahi honi chahiye."
+      - role: agent
+        text: "Link bhej diya SMS pe. Grace period mein hai toh coverage continuous rahega. Set kar lo aaj hi!"
+    outcome: promise_to_pay
+
+  - id: acc_05
+    category: cc_bill
+    amount: 8000
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} card se hoon. Aapka auto-debit mandate cancel hua. Galti se hua ya planned?"
+      - role: customer
+        text: "Net banking pe kuch karte time galti se cancel ho gaya. Wapas kaise karun?"
+      - role: agent
+        text: "Bahut simple hai — SMS pe link aa raha hai, uspe tap karke mandate wapas set ho jayega. Due date 15 tarik hai, toh time hai."
+      - role: customer
+        text: "Ok done, kar liya."
+      - role: agent
+        text: "Perfect! 15 ko normal deduction ho jayega. Koi issue ho toh call kar lena. Thank you!"
+    outcome: promise_to_pay
+
+  - id: acc_06
+    category: emi
+    amount: 25000
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se call. ₹{amount} EMI mandate cancel dikha raha hai. Kya intentionally kiya?"
+      - role: customer
+        text: "Haan nahi... woh bank ne kuch message bheja tha mandate re-register karne ko, usme galti ho gayi."
+      - role: agent
+        text: "Accha, bank ne re-registration maanga tha. Hota hai sometimes. Main naya mandate link bhej deta hoon — fresh setup ho jayega."
+      - role: customer
+        text: "Theek hai. Aur yeh baar baar toh nahi hoga na?"
+      - role: agent
+        text: "Normally nahi hota. Agar bank se phir aisa message aaye toh pehle humein call kar lena, hum guide kar denge. Link check karo!"
+    outcome: promise_to_pay
+
+  - id: acc_07
+    category: subscription
+    amount: 1999
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka plan cancel hua hai. Kya jaan-boojh ke kiya?"
+      - role: customer
+        text: "Nahi yaar, UPI app mein mandate section mein ghus gaya tha. Sab cancel kar diya galti se."
+      - role: agent
+        text: "Oh! Matlab aur bhi mandates cancel hue honge. Humare liye toh link se fix ho jayega — baaki companies ko bhi call karna padega."
+      - role: customer
+        text: "Haan 3-4 aur cancel ho gaye. Headache ho gaya. Bhej do link jaldi."
+      - role: agent
+        text: "Bhej diya! 30 seconds mein done. Baaki ke liye bhi jaldi kar lo. Good luck!"
+    outcome: promise_to_pay
+
+  - id: acc_08
+    category: sip
+    amount: 10000
+    turns:
+      - role: agent
+        text: "Hi ji! {brand_name} se hoon. ₹{amount}/month SIP cancel hua. Galti se ya planned?"
+      - role: customer
+        text: "Galti se. Koi NAV change karne gaya tha app mein, mandate cancel ho gaya. Bahut confusing UI hai."
+      - role: agent
+        text: "UI feedback note kar liya, team ko forward karunga. Abhi ke liye — link bhej raha hoon, SIP wapas start. Same fund, same amount."
+      - role: customer
+        text: "Same SIP hi restart hoga na? Naya SIP nahi banana padega?"
+      - role: agent
+        text: "Ji same hi rahega — fund, folio number, sab same. Sirf mandate naya set hoga. Link pe tap kijiye!"
+    outcome: promise_to_pay
+
+  - id: acc_09
+    category: emi
+    amount: 6000
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} finance se hoon. ₹{amount} EMI mandate cancel dikha raha hai."
+      - role: customer
+        text: "Haan woh meri wife ne bank app se kuch karte time cancel kar diya. Pata nahi tha usse."
+      - role: agent
+        text: "Koi baat nahi! Link bhej raha hoon — aap ya aapki wife, koi bhi set kar sakta hai. UPI ya net banking dono se ho jayega."
+      - role: customer
+        text: "Ok, wife ko bol deta hoon kar de. Thanks."
+      - role: agent
+        text: "Sure! Link 24 hours valid hai. Koi issue ho toh call kar lena. Dhanyavaad!"
+    outcome: promise_to_pay
+
+  - id: acc_10
+    category: subscription
+    amount: 299
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. ₹{amount}/month plan cancel hua. Sab theek?"
+      - role: customer
+        text: "Cancel? Nahi kiya maine toh. Kab hua?"
+      - role: agent
+        text: "2 din pehle. Kabhi kabhi bank app update ke time autopay settings reset ho jaati hain."
+      - role: customer
+        text: "Haan update toh kiya tha. Yeh toh galat baat hai bank ki."
+      - role: agent
+        text: "Haan, inconvenient toh hai. Link bhej raha hoon — ek tap mein wapas ho jayega. Aapka data sab safe hai."
+      - role: customer
+        text: "Theek hai kar leta hoon. Thanks for calling."
+      - role: agent
+        text: "Thank you ji! Accha din ho."
+    outcome: promise_to_pay
+
+  - id: acc_11
+    category: insurance
+    amount: 1500
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Insurance premium mandate cancel hua hai."
+      - role: customer
+        text: "Kya? Maine nahi kiya! Yeh kaise hua?"
+      - role: agent
+        text: "Bank end se cancel hua hai — kabhi kabhi technical glitch mein hota hai. Grace period mein hai toh policy safe hai. Abhi mandate set kar lein?"
+      - role: customer
+        text: "Haan haan zaroor. Policy lapse nahi honi chahiye."
+      - role: agent
+        text: "Bilkul nahi hogi. Link SMS pe aa gaya — abhi set kar lo. Coverage continue rahega. Koi gap nahi."
+    outcome: promise_to_pay
+
+  - id: acc_12
+    category: emi
+    amount: 42000
+    turns:
+      - role: agent
+        text: "Hello ji! {brand_name} se urgent call. ₹{amount} EMI mandate cancel hua hai."
+      - role: customer
+        text: "Yeh toh home loan ka hai! Galti se cancel ho gaya... kya penalty lagegi?"
+      - role: agent
+        text: "Agar aaj hi wapas set kar lein toh koi penalty nahi. Next EMI date 5 tarik hai, abhi 22 hai — time hai."
+      - role: customer
+        text: "Abhi kar raha hoon! Link bhejo."
+      - role: agent
+        text: "Bhej diya! Jab set ho jaye toh SMS confirmation aayega. Home loan mandate important hai — done hone pe mujhe bhi bata dena."
+    outcome: promise_to_pay

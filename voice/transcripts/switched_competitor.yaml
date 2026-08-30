@@ -1,0 +1,198 @@
+scenario: switched_competitor
+description: Customer moved to a competing service
+goal: Acknowledge, gather feedback, mention unique features briefly
+
+conversations:
+  - id: comp_01
+    category: subscription
+    amount: 999
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. Aapne subscription cancel kiya hai. Kya koi issue tha ya koi aur service try kar rahe hain?"
+      - role: customer
+        text: "Haan, competitor pe shift ho gaya. Unka UI better hai."
+      - role: agent
+        text: "Accha, feedback ke liye shukriya. Kya batayenge kaunsa specific feature better laga? Hum improve karna chahte hain."
+      - role: customer
+        text: "Dashboard bahut clean hai unka. Aur mobile app bhi fast hai."
+      - role: agent
+        text: "Noted, yeh valid feedback hai. Actually hum bhi next month naya dashboard launch kar rahe hain. Agar tab ek baar dekhna chahein toh account active rahega. Thank you for being honest!"
+    outcome: refused
+
+  - id: comp_02
+    category: insurance
+    amount: 2000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapki insurance mandate cancel hui hai. Kya doosri company mein le liya?"
+      - role: customer
+        text: "Haan, XYZ insurance mein ₹1,500 mein same cover mil raha hai."
+      - role: agent
+        text: "Samajhta hoon, price compare karna sahi hai. Bas ek baat check kar lena — XYZ mein waiting period phir se start hoga naya customer ke taur pe. Humare saath aapka waiting period khatam ho chuka hai."
+      - role: customer
+        text: "Oh accha, waiting period phir se lagega? Woh toh nahi pata tha."
+      - role: agent
+        text: "Ji haan, usually 2-4 saal ka hota hai. Agar aap humare paas ₹1,800/month pe rakhna chahein toh match karne ki koshish karenge. Kya interest hai?"
+      - role: customer
+        text: "₹1,800 mein same coverage? Haan woh chalega."
+      - role: agent
+        text: "Request daal deta hoon. Confirmation 48 hours mein aa jayega. Dhanyavaad!"
+    outcome: interested_in_downgrade
+    offered_amount: 1800
+
+  - id: comp_03
+    category: subscription
+    amount: 1499
+    turns:
+      - role: agent
+        text: "Hello ji! {brand_name} se call. Plan cancel hua hai. Kya competitor switch kiya?"
+      - role: customer
+        text: "Haan, bahut soch ke kiya. Aapki service mein API access nahi tha basic plan mein."
+      - role: agent
+        text: "Valid point. Actually ab humare ₹999/month plan mein bhi API access include kar diya hai. Kya yeh game changer hota aapke liye?"
+      - role: customer
+        text: "Hmm, ab toh hai? Par main already migrate kar chuka hoon data."
+      - role: agent
+        text: "Samajhta hoon, migration phir se karna pain hai. Agar kabhi wapas aana ho toh free migration support denge. Account 6 months active rahega. Shukriya!"
+    outcome: refused
+
+  - id: comp_04
+    category: sip
+    amount: 10000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka ₹{amount}/month SIP cancel hua. Kya doosre platform pe shift kar rahe hain?"
+      - role: customer
+        text: "Haan, Groww pe shift ho raha hoon. Interface bahut simple hai."
+      - role: agent
+        text: "Groww accha platform hai. Bas ek cheez — aapka SIP agar mid-cycle transfer hoga toh exit load lag sakta hai. Kya aapne check kiya?"
+      - role: customer
+        text: "Exit load? Nahi check kiya. Kitna hoga?"
+      - role: agent
+        text: "Agar 1 saal se kam hai toh 1% exit load lagega. Aapka SIP 8 months purana hai, toh ₹800 ka charge aayega. 4 months aur rakh lein toh zero exit load. Decision aapka hai."
+      - role: customer
+        text: "Accha toh 4 months aur rakh leta hoon phir."
+      - role: agent
+        text: "Smart move! Mandate link bhej raha hoon. 4 months baad exit load-free transfer kar sakte ho. Thank you!"
+    outcome: promise_to_pay
+
+  - id: comp_05
+    category: subscription
+    amount: 599
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. ₹{amount}/month plan cancel hua. Koi aur tool use kar rahe hain kya?"
+      - role: customer
+        text: "Free alternative mil gaya. Paid ki zaroorat nahi."
+      - role: agent
+        text: "Free tools bahut acche hain basic use ke liye. Kya main pooch sakta hoon kaunsa use kar rahe? Just feedback ke liye."
+      - role: customer
+        text: "Google ka free tool. Woh kaafi hai mere liye."
+      - role: agent
+        text: "Google tools great hain. Agar kabhi advanced features chahiye toh yaad rakhiye — aapka account saved rahega. Thank you, have a good day!"
+    outcome: refused
+
+  - id: comp_06
+    category: emi
+    amount: 20000
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} finance se hoon. Aapka ₹{amount} EMI mandate cancel hua. Kya doosri company se loan le liya?"
+      - role: customer
+        text: "Haan, doosri jagah interest rate kam mila. 2% less."
+      - role: agent
+        text: "Accha ji. Balance transfer kiya toh processing fee bhi lagi hogi. Humare paas bhi rate revision ka option hai — kya aap batayenge kitna rate mil raha hai? Match karne ki koshish karenge."
+      - role: customer
+        text: "12% mil raha hai. Aap 14% le rahe the."
+      - role: agent
+        text: "Main 12.5% ka approval check karta hoon. Processing fee zero hogi kyunki existing customer ho. 24 hours mein update dunga. Theek hai?"
+      - role: customer
+        text: "Agar 12.5% match karo toh yahi rehta hoon. Hassle kam hoga."
+      - role: agent
+        text: "Bilkul! Request daal deta hoon. Kal tak call karunga confirmation ke saath. Thank you ji!"
+    outcome: interested_in_downgrade
+    offered_amount: 0
+
+  - id: comp_07
+    category: subscription
+    amount: 3499
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol raha hoon. Premium plan cancel hua. Competitor pe jaana ho raha hai?"
+      - role: customer
+        text: "Haan, bahut soch samajh ke decision liya hai. Please convince mat karo."
+      - role: agent
+        text: "Bilkul, aapka decision respect karta hoon. Bas ek request — 30 seconds mein ek feedback form bhej sakta hoon? Hum product improve karna chahte hain."
+      - role: customer
+        text: "Theek hai, bhej do form. Feedback de dunga."
+      - role: agent
+        text: "SMS pe bhej diya. Aapka input bahut valuable hai. Thank you for being our customer. All the best!"
+    outcome: refused
+
+  - id: comp_08
+    category: subscription
+    amount: 1299
+    turns:
+      - role: agent
+        text: "Hi ji! {brand_name} se hoon. Plan cancel hua. Doosri jagah shift?"
+      - role: customer
+        text: "Haan, competitor ka annual plan bahut sasta tha."
+      - role: agent
+        text: "Annual plans mein saving zyada hoti hai, sahi kiya. Humare paas bhi annual plan hai ₹799/month effective — kya compare karke dekhna chahenge?"
+      - role: customer
+        text: "₹799 mein? Already doosra le liya par next year dekh lunga."
+      - role: agent
+        text: "Zaroor! Renewal ke time humein ek mauka dena. Account ready rahega. Thank you ji!"
+    outcome: refused
+
+  - id: comp_09
+    category: cc_bill
+    amount: 12000
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} credit card se hoon. Auto-debit cancel hua. Doosra card use kar rahe?"
+      - role: customer
+        text: "Haan, rewards better hai doosre card pe. Cashback zyada milta hai."
+      - role: agent
+        text: "Accha ji. Actually humare upgraded card mein 5% cashback hai online shopping pe. Aapka existing card upgrade ho sakta hai — zero cost. Interest hai?"
+      - role: customer
+        text: "5%? Woh toh accha hai. Upgrade kaise hoga?"
+      - role: agent
+        text: "Main request daal deta hoon — 3-5 din mein naya card aa jayega. Same card number, same limit. Auto-debit wapas set ho jayega. Chalega?"
+      - role: customer
+        text: "Haan, upgrade kar do."
+      - role: agent
+        text: "Done! Confirmation SMS aayega. Dhanyavaad!"
+    outcome: promise_to_pay
+
+  - id: comp_10
+    category: subscription
+    amount: 899
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se call. ₹{amount}/month plan cancel hua. Koi aur service pe gaye?"
+      - role: customer
+        text: "Friend ne ek free tool recommend kiya. Try kar raha hoon."
+      - role: agent
+        text: "Acchi baat hai try karna. Agar 30 days mein lagta hai ki paid features miss ho rahe hain, toh humare paas welcome-back offer hoga — pehle month free. Kya SMS bhej doon details ke saath?"
+      - role: customer
+        text: "Haan bhej do, save karke rakh lunga."
+      - role: agent
+        text: "Bhej diya! Jab bhi mann kare wapas aa jaana. Accha din ho!"
+    outcome: refused
+
+  - id: comp_11
+    category: insurance
+    amount: 3500
+    turns:
+      - role: agent
+        text: "Hello ji! {brand_name} insurance se hoon. Aapki policy cancel ho rahi hai. Doosri company mein shift?"
+      - role: customer
+        text: "Haan, company ka group insurance mil gaya. Personal nahi chahiye."
+      - role: agent
+        text: "Group insurance accha hai job ke saath. Bas yaad rakhiye ki woh job-dependent hai. Personal policy ko reduced premium pe maintain kar sakte hain — ₹1,200/month mein basic cover."
+      - role: customer
+        text: "Abhi toh job stable hai. Baad mein dekhunga."
+      - role: agent
+        text: "Bilkul. Policy 90 days tak revive ho sakti hai bina medical test ke. Uske baad fresh application lagega. Accha din ho ji!"
+    outcome: refused

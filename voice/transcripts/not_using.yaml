@@ -1,0 +1,235 @@
+scenario: not_using
+description: Customer cancelled because they stopped using the service
+goal: Highlight value, offer pause instead of full cancellation
+
+conversations:
+  - id: use_01
+    category: subscription
+    amount: 999
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. Aapne apna subscription cancel kiya hai. Kya service use nahi ho rahi thi?"
+      - role: customer
+        text: "Haan, last 2-3 months se open hi nahi kiya."
+      - role: agent
+        text: "Accha ji. Kya main pooch sakta hoon — pehle kya use karte the mainly? Shayad koi feature miss ho raha ho."
+      - role: customer
+        text: "Reports dekhta tha pehle, par ab woh Excel mein bana leta hoon."
+      - role: agent
+        text: "Makes sense. Ek option hai — aap subscription 3 months ke liye pause kar sakte ho, cancel nahi. Data saved rahega. Jab chahein resume kar lena."
+      - role: customer
+        text: "Pause ka option hai? Haan woh kar do, cancel mat karo phir."
+      - role: agent
+        text: "Done! 3 months pause ho gaya. December mein aapko reminder aayega. Dhanyavaad!"
+    outcome: promise_to_pay
+
+  - id: use_02
+    category: subscription
+    amount: 1499
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol rahi hoon. Aapka ₹{amount}/month plan cancel hua. Kya koi issue tha?"
+      - role: customer
+        text: "Issue nahi tha, bas use nahi kar rahi thi. Paise waste ho rahe the."
+      - role: agent
+        text: "Samajhti hoon. Actually last month se hum ne ek naya feature add kiya hai — automated reports jo directly email pe aate hain. Aapko manually kuch karna nahi padta."
+      - role: customer
+        text: "Accha? Mujhe pata hi nahi tha."
+      - role: agent
+        text: "Haan, bahut log miss kar dete hain. Kya aap ek month free trial lena chahogi naye features ke saath? Pasand na aaye toh cancel."
+      - role: customer
+        text: "Free trial hai toh dekh leti hoon. Kaise start hoga?"
+      - role: agent
+        text: "Main abhi activate kar deti hoon — 30 days free, phir decide kijiye. SMS aa jayega confirmation ka."
+    outcome: promise_to_pay
+
+  - id: use_03
+    category: sip
+    amount: 5000
+    turns:
+      - role: agent
+        text: "Hello ji! {brand_name} se hoon. Aapka ₹{amount}/month SIP cancel hua hai. Kya aap investing band kar rahe hain?"
+      - role: customer
+        text: "SIP toh theek hai par returns kuch khaas nahi dikh rahe. 1 saal ho gaya."
+      - role: agent
+        text: "Ji, 1 saal mein market volatility ke kaaran sometimes returns low dikhte hain. But historically 3-5 saal mein SIP ne consistently 12-15% returns diye hain. Abhi nikalne se jo loss hua woh lock ho jayega."
+      - role: customer
+        text: "Hmm toh kya karoon? Continue karun?"
+      - role: agent
+        text: "Agar comfortable ho toh continue karna better hai — rupee cost averaging ka fayda tabhi milta hai jab market down ho. But completely aapka decision. Mandate link bhejoon?"
+      - role: customer
+        text: "Theek hai, continue karte hain. Bhej do link."
+      - role: agent
+        text: "Great decision! Link bhej raha hoon. Long term mein zaroor fayda hoga. Thank you ji!"
+    outcome: promise_to_pay
+
+  - id: use_04
+    category: subscription
+    amount: 499
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call hai. Aapne ₹{amount}/month subscription cancel kiya. Kya use nahi ho rahi thi?"
+      - role: customer
+        text: "Nahi yaar, install karke bhool gaya tha. Phone mein jagah bhi nahi hai."
+      - role: agent
+        text: "Haha, hota hai. Actually ab web version bhi hai — install karne ki zaroorat nahi. Browser se use kar sakte ho. Kya woh try karna chahenge?"
+      - role: customer
+        text: "Web version? Accha. Par abhi nahi chahiye honestly."
+      - role: agent
+        text: "No worries! Jab bhi mann kare, {brand_name}.com pe jaake login kar lijiye. Account saved rahega. Accha din ho!"
+    outcome: refused
+
+  - id: use_05
+    category: insurance
+    amount: 1800
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} insurance se hoon. Aapki ₹{amount}/month premium mandate cancel hui. Kya policy continue nahi karni?"
+      - role: customer
+        text: "Office se insurance mil raha hai, toh double coverage ki zaroorat nahi."
+      - role: agent
+        text: "Samajh mein aata hai. Bas ek baat — office insurance job ke saath jaati hai. Yeh personal policy aapki rehti hai chahe kahi bhi jaao. Kya policy pause karke rakhna chahenge? Premium nahi katega par policy lapse nahi hogi."
+      - role: customer
+        text: "Pause matlab? Kitne time ke liye?"
+      - role: agent
+        text: "6 months tak pause kar sakte hain. Uske baad ya toh resume ya cancel. Koi charge nahi lagega pause mein."
+      - role: customer
+        text: "Theek hai, pause kar do. Job change ki soch raha hoon toh backup rehna chahiye."
+      - role: agent
+        text: "Smart thinking! Pause ho gaya. 6 months baad reminder aayega. All the best!"
+    outcome: promise_to_pay
+
+  - id: use_06
+    category: subscription
+    amount: 2499
+    turns:
+      - role: agent
+        text: "Hi ji! {brand_name} se bol raha hoon. Aapka premium plan cancel hua hai. Kya service se satisfied nahi the?"
+      - role: customer
+        text: "Service acchi thi, par mere use case ke liye overkill hai. Itne features ki zaroorat nahi."
+      - role: agent
+        text: "Valid point. Humare paas ₹999/month ka essential plan hai — sirf core features, no extras. Aapke use case ke liye perfect fit hoga."
+      - role: customer
+        text: "₹999 mein kya kya milega exactly?"
+      - role: agent
+        text: "Dashboard, basic analytics, aur 5 user seats. Advanced reporting aur API access nahi hoga. Details bhej doon?"
+      - role: customer
+        text: "Haan bhej do, main dekh ke bata dunga."
+      - role: agent
+        text: "SMS pe bhej raha hoon abhi. Reply karke bata dena. Dhanyavaad!"
+    outcome: interested_in_downgrade
+    offered_amount: 999
+
+  - id: use_07
+    category: emi
+    amount: 8000
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se hoon. Aapka ₹{amount} ka EMI mandate cancel hua. Kya product se issue tha?"
+      - role: customer
+        text: "Product theek hai, par use nahi kar raha. Drawer mein pada hai."
+      - role: agent
+        text: "Accha ji. EMI toh product ka loan hai, woh toh complete karna padega na. Cancel karne se late fees aur credit score pe impact hoga."
+      - role: customer
+        text: "Oh accha, matlab EMI toh bharna hi padega?"
+      - role: agent
+        text: "Ji haan. Agar amount mushkil hai toh tenure extend karwa sakte hain — ₹4,500/month ho jayega. Kya woh better rahega?"
+      - role: customer
+        text: "Haan ₹4,500 toh chalega. Kar do woh."
+      - role: agent
+        text: "Request daal deta hoon. 24 hours mein naya mandate link aa jayega. Thank you!"
+    outcome: interested_in_downgrade
+    offered_amount: 4500
+
+  - id: use_08
+    category: subscription
+    amount: 699
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. ₹{amount}/month plan cancel hua. Kya aap kisi aur tool pe shift ho gaye?"
+      - role: customer
+        text: "Nahi shift nahi hua, bas use karna bhool jaata hoon. Reminder nahi aata."
+      - role: agent
+        text: "Arre woh toh hum fix kar sakte hain! Weekly digest email aa sakta hai — aapka data summary ke saath. Enable kar doon?"
+      - role: customer
+        text: "Accha woh feature hai? Haan kar do."
+      - role: agent
+        text: "Done! Har Monday ko email aayegi. Subscription bhi wapas activate kar doon?"
+      - role: customer
+        text: "Haan kar do, dekhte hain ek month aur."
+      - role: agent
+        text: "Activate ho gaya! Mandate link SMS pe hai. Thank you ji!"
+    outcome: promise_to_pay
+
+  - id: use_09
+    category: cc_bill
+    amount: 5000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} card se bol rahi hoon. Auto-debit mandate cancel hua hai. Kya card use nahi kar rahe ab?"
+      - role: customer
+        text: "Card toh use karta hoon, par auto-debit nahi chahiye. Khud pay karunga."
+      - role: agent
+        text: "Bilkul ji, aapki marzi. Bas ek reminder — auto-debit se late payment fees bachte hain aur credit score improve hota hai. Kya minimum amount ₹1,500 ka auto-debit rakh lein?"
+      - role: customer
+        text: "Nahi, manually karunga. Thanks."
+      - role: agent
+        text: "No problem! Due date reminder SMS aata rahega. Dhanyavaad!"
+    outcome: refused
+
+  - id: use_10
+    category: subscription
+    amount: 399
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. ₹{amount}/month plan cancel hua. Kya koi feedback dena chahenge?"
+      - role: customer
+        text: "App bahut slow hai. Open hone mein 30 seconds lagta hai."
+      - role: agent
+        text: "Yeh toh accha feedback hai, shukriya batane ke liye. Actually last week humne ek update release kiya — app speed 3x better ho gayi hai. Kya ek baar try karke dekhenge?"
+      - role: customer
+        text: "Update aa gaya kya? Dekhta hoon."
+      - role: agent
+        text: "Ji haan, v4.2 hai latest. Update karke dekh lein — agar still slow lage toh mujhe bata dena, refund ho jayega. Subscription wapas activate karoon?"
+      - role: customer
+        text: "Hmm theek hai, ek chance aur deta hoon."
+      - role: agent
+        text: "Thank you! Mandate link bhej raha hoon. Agar issue ho toh seedha mujhe call kar lena."
+    outcome: promise_to_pay
+
+  - id: use_11
+    category: sip
+    amount: 3000
+    turns:
+      - role: agent
+        text: "Namaste ji! {brand_name} se hoon. Aapka ₹{amount}/month SIP mandate cancel hua. Investing band kar rahe hain?"
+      - role: customer
+        text: "SIP ka kuch samajh nahi aata. Portfolio down dikh raha hai toh darr lag raha hai."
+      - role: agent
+        text: "Bahut common concern hai ji. Market short-term mein up-down hota hai, but SIP ka fayda yeh hai ki down market mein zyada units milte hain. Jab market recover karta hai toh average cost kam hoti hai."
+      - role: customer
+        text: "Toh abhi nikalna galat hoga?"
+      - role: agent
+        text: "Historically haan — down market mein SIP tod dena sabse common mistake hai. Par completely aapka decision. Agar tension hai toh amount reduce kar sakte hain ₹1,000/month tak."
+      - role: customer
+        text: "₹1,000 se chalu rakhta hoon. Darta kam lunga toh."
+      - role: agent
+        text: "Smart approach! ₹1,000/month ka link bhej raha hoon. Jab confident feel ho, baad mein badha lena."
+    outcome: interested_in_downgrade
+    offered_amount: 1000
+
+  - id: use_12
+    category: subscription
+    amount: 1999
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se call. Aapka ₹{amount}/month plan cancel hua. Kya sab theek hai?"
+      - role: customer
+        text: "Team ne decide kiya ki aur use nahi karenge. Doosra tool adopt kar liya."
+      - role: agent
+        text: "Accha ji, team ka decision hai toh samajh mein aata hai. Kya main jaanaa sakta hoon konsa tool shift kiya — feedback ke liye, sales pitch nahi."
+      - role: customer
+        text: "Notion pe shift ho gaye. Free mein bahut kuch mil jaata hai."
+      - role: agent
+        text: "Samajhta hoon, Notion accha tool hai. Agar kabhi need ho humare specific features ki, toh account active rahega 6 months tak. Thank you for the feedback!"
+    outcome: refused

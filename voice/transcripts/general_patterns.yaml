@@ -1,0 +1,354 @@
+scenario: general_patterns
+description: Cross-scenario conversation patterns — no response, callback requests, quick agrees, firm refuses
+goal: Demonstrate standard handling for common customer behaviors regardless of scenario
+
+conversations:
+  # --- NO RESPONSE PATTERNS ---
+  # Single follow-up, then stop
+
+  - id: gen_nr_01
+    category: subscription
+    amount: 999
+    pattern: no_response
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol raha hoon. Aapka subscription cancel hua hai. Kya main jaanaa sakta hoon ki koi issue tha?"
+      - role: customer
+        text: "..."
+      - role: agent
+        text: "Hello? Aap sun rahe hain?"
+      - role: customer
+        text: "..."
+      - role: agent
+        text: "Koi baat nahi ji. Main ek SMS bhej deta hoon details ke saath. Jab bhi convenient ho, reply kar dijiye. Dhanyavaad!"
+    outcome: refused
+
+  - id: gen_nr_02
+    category: emi
+    amount: 12000
+    pattern: no_response
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se call. Aapka EMI mandate cancel hua hai."
+      - role: customer
+        text: "Haan..."
+      - role: agent
+        text: "Kya main jaanaa sakta hoon kya issue hua? Main help karna chahta hoon."
+      - role: customer
+        text: "..."
+      - role: agent
+        text: "Agar abhi baat karna convenient nahi hai toh koi baat nahi. SMS pe details bhej dunga. Apna khayal rakhiye."
+    outcome: refused
+
+  - id: gen_nr_03
+    category: insurance
+    amount: 3000
+    pattern: no_response
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} insurance se hoon. Premium mandate cancel hua hai."
+      - role: customer
+        text: "Abhi busy hoon."
+      - role: agent
+        text: "Bilkul ji, kab call karna convenient hoga?"
+      - role: customer
+        text: "..."
+      - role: agent
+        text: "Theek hai, main SMS bhej deta hoon. Jab free ho reply kar dijiye ya humein call kar lijiye. Thank you!"
+    outcome: refused
+
+  - id: gen_nr_04
+    category: sip
+    amount: 5000
+    pattern: no_response
+    turns:
+      - role: agent
+        text: "Hello ji! {brand_name} se hoon. Aapka SIP cancel hua hai. Kuch help chahiye?"
+      - role: customer
+        text: "..."
+      - role: agent
+        text: "Agar abhi time nahi hai toh SMS mein sab details bhej deta hoon. Koi rush nahi. Accha din ho!"
+    outcome: refused
+
+  # --- CALLBACK REQUEST PATTERNS ---
+  # "Baad mein baat karo" → capture callback
+
+  - id: gen_cb_01
+    category: subscription
+    amount: 1499
+    pattern: callback_request
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Aapka plan cancel hua hai."
+      - role: customer
+        text: "Abhi nahi yaar, baad mein baat karo."
+      - role: agent
+        text: "Bilkul ji. Kab call karna chahenge — kal subah ya shaam?"
+      - role: customer
+        text: "Kal shaam ko 6 baje ke baad."
+      - role: agent
+        text: "Done! Kal 6:30 pe call karunga. Dhanyavaad!"
+    outcome: wants_callback
+
+  - id: gen_cb_02
+    category: emi
+    amount: 20000
+    pattern: callback_request
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} finance se hoon. EMI mandate cancel hua."
+      - role: customer
+        text: "Meeting mein hoon, baad mein call karo."
+      - role: agent
+        text: "Sorry for the timing! Kab convenient hoga — aaj shaam ya kal?"
+      - role: customer
+        text: "Aaj 7 baje ke baad."
+      - role: agent
+        text: "Noted ji. 7:15 pe call karunga. Thank you, sorry for interrupting."
+    outcome: wants_callback
+
+  - id: gen_cb_03
+    category: cc_bill
+    amount: 8000
+    pattern: callback_request
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} card se hoon. Auto-debit cancel hua."
+      - role: customer
+        text: "Driving kar raha hoon, baad mein call karna."
+      - role: agent
+        text: "Safety first ji! Kab call karun?"
+      - role: customer
+        text: "Ek ghante baad."
+      - role: agent
+        text: "Done. 1 ghante mein call karunga. Drive safe!"
+    outcome: wants_callback
+
+  - id: gen_cb_04
+    category: insurance
+    amount: 2000
+    pattern: callback_request
+    turns:
+      - role: agent
+        text: "Hi ji! {brand_name} se hoon. Insurance mandate cancel hua."
+      - role: customer
+        text: "Suno, weekend pe baat karte hain. Weekdays mein time nahi milta."
+      - role: agent
+        text: "Bilkul ji. Saturday subah 11 baje theek rahega?"
+      - role: customer
+        text: "Haan chalega."
+      - role: agent
+        text: "Saturday 11 AM set hai. Accha din ho!"
+    outcome: wants_callback
+
+  # --- QUICK AGREE PATTERNS ---
+  # Customer agrees readily → capture promise, send link
+
+  - id: gen_ag_01
+    category: subscription
+    amount: 699
+    pattern: quick_agree
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. Aapka ₹{amount}/month plan cancel hua. Kuch issue tha?"
+      - role: customer
+        text: "Nahi, bhool gaya tha renew karna. Wapas kar do."
+      - role: agent
+        text: "Koi baat nahi! Mandate link bhej raha hoon — ek tap mein wapas active ho jayega."
+      - role: customer
+        text: "Ok bhej do."
+      - role: agent
+        text: "Bhej diya! Set ho jaaye toh agle month se normal deduction. Dhanyavaad!"
+    outcome: promise_to_pay
+
+  - id: gen_ag_02
+    category: emi
+    amount: 10000
+    pattern: quick_agree
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se call. ₹{amount} EMI mandate cancel hua."
+      - role: customer
+        text: "Accha? Kab hua? Maine toh nahi kiya."
+      - role: agent
+        text: "Parso raat ko. Bank end se cancel hua lag raha hai. Main naya link bhej deta hoon."
+      - role: customer
+        text: "Haan jaldi bhej do, EMI miss nahi hona chahiye."
+      - role: agent
+        text: "Link bhej diya! Aaj hi set kar lo, next due date pe normal payment ho jayega. Thank you ji!"
+    outcome: promise_to_pay
+
+  - id: gen_ag_03
+    category: sip
+    amount: 3000
+    pattern: quick_agree
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se hoon. ₹{amount}/month SIP cancel hua."
+      - role: customer
+        text: "Haan, woh by mistake hua tha. Wapas start karna hai."
+      - role: agent
+        text: "Perfect! Same fund, same amount ka link bhej raha hoon."
+      - role: customer
+        text: "Done, kar liya set."
+      - role: agent
+        text: "Great! Next SIP date pe normal deduction ho jayega. Thank you!"
+    outcome: promise_to_pay
+
+  - id: gen_ag_04
+    category: insurance
+    amount: 1500
+    pattern: quick_agree
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Insurance premium mandate cancel hua."
+      - role: customer
+        text: "Haan pata hai, bank ne bola tha kuch technical issue tha. Wapas set karna hai."
+      - role: agent
+        text: "SMS pe link bhej raha hoon. Grace period mein hai toh coverage break nahi aayega."
+      - role: customer
+        text: "Accha, abhi kar leta hoon."
+      - role: agent
+        text: "Shukriya! Coverage continue rahega. Koi issue ho toh call kar lena."
+    outcome: promise_to_pay
+
+  # --- FIRM REFUSE PATTERNS ---
+  # Customer refuses clearly → graceful exit, no pushing
+
+  - id: gen_rf_01
+    category: subscription
+    amount: 1999
+    pattern: firm_refuse
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Plan cancel hua hai."
+      - role: customer
+        text: "Haan kiya. Nahi chahiye. Thank you."
+      - role: agent
+        text: "Bilkul ji, samajh gaya. Agar kabhi zaroorat ho toh account saved rahega. Accha din ho!"
+    outcome: refused
+
+  - id: gen_rf_02
+    category: emi
+    amount: 30000
+    pattern: firm_refuse
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se hoon. EMI mandate cancel hua."
+      - role: customer
+        text: "Poora loan khatam karna chahta hoon. Lump sum de dunga."
+      - role: agent
+        text: "Accha ji! Foreclosure amount check karta hoon... ₹87,000 outstanding hai. Foreclosure charges ₹2,000. Total ₹89,000 mein loan close ho jayega. Yeh karna chahenge?"
+      - role: customer
+        text: "Haan, kaise pay karun?"
+      - role: agent
+        text: "SMS pe payment link bhej raha hoon. Pay hone pe 48 hours mein NOC milega. Dhanyavaad!"
+    outcome: refused
+
+  - id: gen_rf_03
+    category: subscription
+    amount: 599
+    pattern: firm_refuse
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Subscription cancel hua."
+      - role: customer
+        text: "DND pe daal do mera number. Koi call mat karo aage se."
+      - role: agent
+        text: "Bilkul ji, DND note kar diya. Aage se koi call nahi aayegi. Sorry for the inconvenience. Take care."
+    outcome: refused
+
+  - id: gen_rf_04
+    category: insurance
+    amount: 5000
+    pattern: firm_refuse
+    turns:
+      - role: agent
+        text: "Hi ji! {brand_name} insurance se hoon. Premium cancel hua."
+      - role: customer
+        text: "Mujhe insurance nahi chahiye. Final decision hai."
+      - role: agent
+        text: "Samajh gaya ji. Bas ek info — policy 90 din tak revive ho sakti hai agar mann badle toh. Uske baad fresh application lagega. Accha din ho!"
+    outcome: refused
+
+  # --- MIXED / EDGE CASE PATTERNS ---
+
+  - id: gen_mix_01
+    category: subscription
+    amount: 799
+    pattern: initially_angry_then_agrees
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se hoon. Subscription cancel hua."
+      - role: customer
+        text: "Tumhara service bakwaas hai."
+      - role: agent
+        text: "Main sorry hoon aapke experience ke liye. Kya batayenge kya issue hua?"
+      - role: customer
+        text: "App crash hota hai baar baar."
+      - role: agent
+        text: "Yeh toh bahut frustrating hoga. Actually humne last week major update release kiya — crashes fix hue hain. Kya ek baar try karke dekhna chahenge?"
+      - role: customer
+        text: "Hmm... agar sach mein fix hua hai toh theek hai. Par phir crash hua toh seedha cancel."
+      - role: agent
+        text: "Fair deal. Link bhej raha hoon. 7 din try kijiye — agar ek bhi crash aaye toh full refund. Mera direct number bhi de raha hoon."
+    outcome: promise_to_pay
+
+  - id: gen_mix_02
+    category: emi
+    amount: 15000
+    pattern: confused_customer
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se call. EMI mandate cancel hua hai."
+      - role: customer
+        text: "Mandate? Kya hota hai mandate?"
+      - role: agent
+        text: "Mandate matlab automatic payment ka permission — jo aapne bank ko diya tha ki har month ₹15,000 apne aap kat jaaye EMI ke liye. Woh cancel ho gaya hai."
+      - role: customer
+        text: "Accha matlab auto-debit? Haan woh toh karna hai mujhe. Kaise karun wapas?"
+      - role: agent
+        text: "Bahut simple hai — main ek link bhej dunga SMS pe. Uspe click karke bank account select karo, confirm karo — bas, 2 minute mein done."
+      - role: customer
+        text: "Ok bhej do."
+      - role: agent
+        text: "Bhej diya! Koi confusion ho toh call kar lena. Main guide kar dunga step by step."
+    outcome: promise_to_pay
+
+  - id: gen_mix_03
+    category: subscription
+    amount: 1299
+    pattern: wants_to_think
+    turns:
+      - role: agent
+        text: "Hello! {brand_name} se hoon. Plan cancel hua hai."
+      - role: customer
+        text: "Haan, soch raha hoon continue karun ya nahi."
+      - role: agent
+        text: "Koi rush nahi ji. Kya koi specific cheez hai jo decision mushkil bana rahi hai?"
+      - role: customer
+        text: "Price thoda zyada hai par service acchi hai."
+      - role: agent
+        text: "Samajhta hoon. Humare paas ₹799/month ka plan bhi hai core features ke saath. Agar main details bhej doon toh sochne mein help hogi?"
+      - role: customer
+        text: "Haan bhej do, 2-3 din mein decide karunga."
+      - role: agent
+        text: "SMS pe bhej diya! Jab bhi decide karein, link usme hi hai. Koi sawaal ho toh call kar lena. Thank you!"
+    outcome: wants_callback
+
+  - id: gen_mix_04
+    category: cc_bill
+    amount: 5000
+    pattern: language_switch
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} credit card se hoon. Auto-debit cancel hua."
+      - role: customer
+        text: "Yes I know, I cancelled it intentionally."
+      - role: agent
+        text: "Okay, understood. May I ask why — any issue with the service?"
+      - role: customer
+        text: "No issue, I just prefer manual payments now."
+      - role: agent
+        text: "Fair enough! Your due date reminder will continue via SMS. Feel free to call if you ever want to re-enable auto-debit. Have a good day!"
+    outcome: refused
