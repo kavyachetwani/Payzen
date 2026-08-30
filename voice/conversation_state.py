@@ -18,6 +18,21 @@ TERMINAL_STATES = {"promise_to_pay", "interested_in_downgrade", "refused", "need
 MAX_TURNS = 5
 
 
+def detect_scenario_from_message(message: str) -> Optional[str]:
+    text = message.lower()
+    if any(w in text for w in ["galti se", "mistake", "accidental", "by mistake", "nahi kiya", "galti"]):
+        return "accidental"
+    if any(w in text for w in ["angry", "kharab", "worst", "bakwas", "bakwaas", "complaint", "scam", "harassment", "gussa", "frustrated"]):
+        return "angry_frustrated"
+    if any(w in text for w in ["mehenga", "mehnga", "expensive", "afford", "zyada", "paisa", "budget", "costly"]):
+        return "too_expensive"
+    if any(w in text for w in ["use nahi", "zaroorat nahi", "dont want", "band karo", "dont need", "kaam nahi", "open nahi"]):
+        return "not_using"
+    if any(w in text for w in ["doosra", "switch", "competitor", "better option", "shift", "migrate"]):
+        return "switched_competitor"
+    return None
+
+
 @dataclass
 class ConversationState:
     payment_id: str
@@ -37,31 +52,46 @@ class ConversationState:
         self.turn_count += 1
 
     def detect_scenario(self, customer_text: str) -> str:
-        text = customer_text.lower()
-        if any(w in text for w in ["galti", "mistake", "accidental", "nahi kiya"]):
-            self.scenario = "accidental"
-        elif any(w in text for w in ["mehnga", "expensive", "afford", "budget", "paisa", "zyada"]):
-            self.scenario = "too_expensive"
-        elif any(w in text for w in ["use nahi", "zaroorat nahi", "kaam nahi"]):
-            self.scenario = "not_using"
-        elif any(w in text for w in ["competitor", "doosra", "switch", "shift"]):
-            self.scenario = "switched_competitor"
-        elif any(w in text for w in ["gussa", "angry", "frustrated", "bakwaas", "scam", "harassment"]):
-            self.scenario = "angry_frustrated"
+        detected = detect_scenario_from_message(customer_text)
+        if detected:
+            self.scenario = detected
         return self.scenario
 
     def detect_outcome(self, customer_text: str) -> Optional[str]:
         text = customer_text.lower()
-        if any(w in text for w in ["nahi chahiye", "cancel hi karo", "band karo", "bye", "dnd", "final hai", "nahi nahi"]):
+
+        # Refusal — clear intent to stop
+        if any(w in text for w in ["nahi chahiye", "cancel hi karo", "cancel kiya", "band karo", "bye", "dnd", "final hai", "refund do"]):
             self.outcome = "refused"
-        elif any(w in text for w in ["consumer forum", "complaint", "senior", "manager", "irda", "rbi"]):
+            return self.outcome
+
+        # Human escalation — regulatory/legal threats or manager requests
+        if any(w in text for w in ["consumer forum", "complaint karunga", "senior", "manager", "irda", "rbi ko"]):
             self.outcome = "needs_human_escalation"
-        elif any(w in text for w in ["baad mein", "kal", "callback", "phir call", "busy", "meeting", "sochta hoon", "sochna padega", "dekhunga", "bataunga"]):
+            return self.outcome
+
+        # Callback — explicit deferral with time reference
+        if any(w in text for w in ["baad mein", "kal", "callback", "phir call", "busy hoon", "meeting mein",
+                                    "sochna padega", "dekhunga", "bataunga", "next week", "later"]):
             self.outcome = "wants_callback"
-        elif any(w in text for w in ["haan kar do", "bhej do", "theek hai", "ok done", "set kar do", "wapas kar do", "kar leta", "try karta", "chance"]):
+            return self.outcome
+
+        # Promise to pay — explicit agreement to act NOW
+        if any(w in text for w in ["haan kar do", "bhej do link", "set kar do", "wapas kar do",
+                                    "ready hoon", "agree", "set up karo", "kar leta hoon",
+                                    "haan chalega", "abhi kar", "ok done", "ok theek hai",
+                                    "try karta", "try karti", "chance de"]):
             self.outcome = "promise_to_pay"
-        elif any(w in text for w in ["kam rate", "chhota plan", "reduce", "sasta", "match karo", "chalega"]):
+            return self.outcome
+
+        # Interested in downgrade — price negotiation or acceptance of lower offer
+        if any(w in text for w in ["kam rate", "chhota plan", "reduce karo", "sasta", "match karo",
+                                    "woh chalega", "ok chalega"]):
             self.outcome = "interested_in_downgrade"
+            return self.outcome
+
+        # "theek hai" alone is acknowledgment, NOT a promise — don't set outcome
+        # "sab theek hai" is customer saying they're fine — don't set outcome
         return self.outcome
 
     def should_end(self) -> bool:
@@ -71,6 +101,12 @@ class ConversationState:
             self.outcome = "refused"
             return True
         return False
+
+    def get_last_customer_message(self) -> Optional[str]:
+        for turn in reversed(self.turns):
+            if turn["role"] == "customer":
+                return turn["text"]
+        return None
 
     def to_dict(self) -> dict:
         return {

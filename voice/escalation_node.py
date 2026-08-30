@@ -7,6 +7,7 @@ the dashboard chat widget.
 """
 
 from voice.escalation_agent import EscalationAgent
+from voice.customer_simulator import CustomerSimulator
 
 _agent_instance: EscalationAgent | None = None
 
@@ -69,3 +70,35 @@ def escalation_conversation_node(state: dict) -> dict:
     }
 
     return {"action_outcome": outcome, "audit_entry": audit}
+
+
+def run_escalation(payment_id: str = "PAY_TEST", use_model: bool = True,
+                   scenario: str = "too_expensive", amount: float = 15000,
+                   personality: str = "hesitant", seed: int = 42) -> dict:
+    """Run a full escalation conversation with the customer simulator."""
+    agent = EscalationAgent(brand_name="Demo Store", use_llm=use_model)
+    simulator = CustomerSimulator(scenario, personality, amount, seed)
+
+    result = agent.start_conversation(
+        payment_id=payment_id,
+        customer_id="CUST_TEST",
+        amount=amount,
+        payment_category="emi",
+    )
+
+    transcript = [{"role": "agent", "text": result["agent_message"]}]
+
+    for _ in range(5):
+        if result.get("conversation_ended"):
+            break
+        customer_msg = simulator.respond(result["agent_message"])
+        transcript.append({"role": "customer", "text": customer_msg})
+        result = agent.process_customer_message(payment_id, customer_msg)
+        transcript.append({"role": "agent", "text": result["agent_message"]})
+
+    return {
+        "transcript": transcript,
+        "outcome": result["state"]["outcome"],
+        "scenario": result["state"]["scenario"],
+        "turn_count": result["state"]["turn_count"],
+    }
