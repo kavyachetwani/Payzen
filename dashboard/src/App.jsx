@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 const API = '/api'
 
@@ -163,9 +163,160 @@ function SvgHBarChart({ data }) {
   )
 }
 
+// ─── TOAST SYSTEM ───────────────────────────────────────────
+
+function ToastContainer({ toasts, onDismiss }) {
+  return (
+    <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none" style={{ maxWidth: '360px' }}>
+      {toasts.map(t => (
+        <div key={t.id}
+          className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium
+            transition-all duration-300 animate-toast-in
+            ${t.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+              t.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' :
+              t.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+              'bg-blue-50 border-blue-200 text-blue-700'}`}>
+          <span className="text-lg flex-shrink-0">
+            {t.type === 'success' ? '✓' : t.type === 'error' ? '✗' : t.type === 'warning' ? '!' : 'ℹ'}
+          </span>
+          <span className="flex-1">{t.message}</span>
+          <button onClick={() => onDismiss(t.id)} className="opacity-50 hover:opacity-100 text-xs ml-2">✕</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── ANIMATED COUNTER HOOK ──────────────────────────────────
+
+function useAnimatedValue(target, duration = 800) {
+  const [value, setValue] = useState(0)
+  const prevTarget = useRef(0)
+
+  useEffect(() => {
+    if (target == null || isNaN(target)) return
+    const start = prevTarget.current
+    const diff = target - start
+    if (diff === 0) { setValue(target); return }
+    const startTime = performance.now()
+    let raf
+    const step = (now) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(start + diff * eased)
+      if (progress < 1) raf = requestAnimationFrame(step)
+      else prevTarget.current = target
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+
+  return value
+}
+
+// ─── BATCH ACTIVITY OVERLAY ─────────────────────────────────
+
+function BatchActivityOverlay({ items, visible }) {
+  const [shown, setShown] = useState([])
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!visible || !items || items.length === 0) { setShown([]); return }
+    setShown([])
+    const timers = items.slice(0, 30).map((item, i) =>
+      setTimeout(() => setShown(prev => [...prev, item]), i * 80)
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [items, visible])
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight
+    }
+  }, [shown])
+
+  if (!visible || shown.length === 0) return null
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 mt-4">
+      <h4 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        Live Processing Feed
+      </h4>
+      <div ref={containerRef} className="space-y-1 max-h-64 overflow-y-auto text-xs">
+        {shown.map((item, i) => (
+          <div key={i} className="flex items-center gap-2 py-1 px-2 rounded animate-feed-in"
+            style={{ animationDelay: '0ms' }}>
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+              item.outcome === 'recovered' ? 'bg-emerald-500' :
+              item.outcome === 'failed_exhausted' ? 'bg-red-400' :
+              'bg-gray-400'}`} />
+            <span className="font-mono text-gray-500 w-20 truncate">{item.payment_id}</span>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+              item.action === 'auto_retry' ? 'bg-emerald-100 text-emerald-700' :
+              item.action?.startsWith('sms') ? 'bg-blue-100 text-blue-700' :
+              item.action?.startsWith('call') ? 'bg-purple-100 text-purple-700' :
+              item.action?.startsWith('decision:') ? 'bg-amber-100 text-amber-700' :
+              'bg-gray-100 text-gray-700'}`}>
+              {item.action?.replace(/_/g, ' ')}
+            </span>
+            {item.amount_recovered > 0 && (
+              <span className="text-emerald-600 font-mono font-medium ml-auto">+{fmtFull(item.amount_recovered)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── CSS ANIMATIONS (injected once) ─────────────────────────
+
+const styleTag = document.createElement('style')
+styleTag.textContent = `
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .animate-toast-in { animation: toast-in 0.3s ease-out; }
+
+  @keyframes feed-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-feed-in { animation: feed-in 0.25s ease-out both; }
+
+  @keyframes card-enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-card-enter { animation: card-enter 0.3s ease-out both; }
+
+  @keyframes ring-fill {
+    from { stroke-dasharray: 0 264; }
+  }
+  .animate-ring { animation: ring-fill 1s ease-out both; }
+
+  @keyframes count-fade {
+    from { opacity: 0.3; }
+    to { opacity: 1; }
+  }
+  .animate-count { animation: count-fade 0.6s ease-out; }
+`
+if (!document.getElementById('stage-11-5-styles')) {
+  styleTag.id = 'stage-11-5-styles'
+  document.head.appendChild(styleTag)
+}
+
 // ─── OVERVIEW PAGE ───────────────────────────────────────────
 
-function OverviewPage({ overview, onNavigateTable, onNavigateDecisions }) {
+function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBatchActivity }) {
+  const animNetRecovered = useAnimatedValue(overview?.net_recovered || 0)
+  const animRecoveryRate = useAnimatedValue(overview?.recovery_rate || 0, 1000)
+  const animRoi = useAnimatedValue(overview?.total_cost > 0 ? Math.round((overview?.net_recovered || 0) / overview.total_cost) : 0)
+  const animAtRisk = useAnimatedValue(overview?.total_at_risk || 0)
+
   if (!overview || overview.error) {
     return (
       <div className="text-center py-32">
@@ -209,9 +360,9 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions }) {
   return (
     <div className="space-y-8 pb-12">
       {/* Revenue at Risk */}
-      <section className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+      <section className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center animate-card-enter">
         <p className="text-sm font-medium text-red-400 uppercase tracking-wider mb-1">Revenue at Risk</p>
-        <h2 className="text-5xl font-bold text-red-600 mb-2">{fmtFull(o.total_at_risk)}</h2>
+        <h2 className="text-5xl font-bold text-red-600 mb-2 animate-count">{fmtFull(Math.round(animAtRisk))}</h2>
         <p className="text-red-400">{o.total_payments} failed payments this cycle</p>
       </section>
 
@@ -291,27 +442,28 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions }) {
       <section>
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Recovery Results</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center animate-card-enter">
             <p className="text-sm text-emerald-500 font-medium mb-1">Net Recovered</p>
-            <p className="text-4xl font-bold text-emerald-600">{fmt(o.net_recovered)}</p>
+            <p className="text-4xl font-bold text-emerald-600 animate-count">{fmt(Math.round(animNetRecovered))}</p>
             <p className="text-sm text-emerald-400 mt-1">from {fmtFull(o.total_at_risk)} at risk</p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center animate-card-enter" style={{ animationDelay: '100ms' }}>
             <p className="text-sm text-blue-500 font-medium mb-1">Recovery Rate</p>
             <div className="relative w-24 h-24 mx-auto my-2">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="#dbeafe" strokeWidth="8" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke="#3b82f6" strokeWidth="8"
-                  strokeDasharray={`${o.recovery_rate * 264} 264`} strokeLinecap="round" />
+                  strokeDasharray={`${animRecoveryRate * 264} 264`} strokeLinecap="round"
+                  className="animate-ring" />
               </svg>
               <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-blue-600">
-                {pct(o.recovery_rate)}
+                {pct(animRecoveryRate)}
               </span>
             </div>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center">
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center animate-card-enter" style={{ animationDelay: '200ms' }}>
             <p className="text-sm text-purple-500 font-medium mb-1">ROI</p>
-            <p className="text-4xl font-bold text-purple-600">{roi.toLocaleString()}x</p>
+            <p className="text-4xl font-bold text-purple-600 animate-count">{Math.round(animRoi).toLocaleString()}x</p>
             <p className="text-sm text-purple-400 mt-1">{fmtFull(o.total_cost)} spent → {fmt(o.net_recovered)}</p>
           </div>
         </div>
@@ -420,6 +572,9 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions }) {
           ))}
         </div>
       </section>
+
+      {/* Batch Activity Overlay */}
+      <BatchActivityOverlay items={recentBatchActivity} visible={recentBatchActivity && recentBatchActivity.length > 0} />
     </div>
   )
 }
@@ -457,7 +612,8 @@ function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, o
 
       <div className="space-y-3">
         {decisions.map(d => (
-          <div key={d.payment_id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition">
+          <div key={d.payment_id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition animate-card-enter"
+            style={{ animationDelay: `${decisions.indexOf(d) * 60}ms` }}>
             <div className="flex justify-between items-start mb-3">
               <div>
                 <button onClick={() => onSelect(d.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-sm font-medium">
@@ -1075,6 +1231,19 @@ function App() {
   const [lastAction, setLastAction] = useState(null)
   const [outcomeFilter, setOutcomeFilter] = useState('')
   const [chatPaymentId, setChatPaymentId] = useState(null)
+  const [toasts, setToasts] = useState([])
+  const [batchActivity, setBatchActivity] = useState([])
+  const toastId = useRef(0)
+
+  const addToast = useCallback((message, type = 'info') => {
+    const id = ++toastId.current
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000)
+  }, [])
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
 
   const refresh = useCallback(async () => {
     try {
@@ -1099,13 +1268,21 @@ function App() {
   useEffect(() => { refresh() }, [refresh])
 
   const runBatch = async () => {
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); setBatchActivity([])
+    addToast('Processing batch...', 'info')
     try {
       const res = await fetch(`${API}/run-batch`, { method: 'POST' })
       const data = await res.json()
       setLastAction(`${data.auto_executed} auto-executed, ${data.business_decisions} decisions, ${data.gate_blocked} blocked`)
+      addToast(`Recovery complete: ${data.auto_executed} auto-executed`, 'success')
       await refresh()
-    } catch { setError('Failed — is the backend running?') }
+      const actRes = await fetch(`${API}/activity?limit=30`).then(r => r.json())
+      setBatchActivity(actRes || [])
+      setTimeout(() => setBatchActivity([]), 12000)
+    } catch {
+      setError('Failed — is the backend running?')
+      addToast('Batch processing failed', 'error')
+    }
     setLoading(false)
   }
 
@@ -1118,12 +1295,16 @@ function App() {
         body: JSON.stringify({ response }),
       }).then(r => r.json())
       setLastAction(`${pid}: ${data.outcome?.replace(/_/g, ' ')}`)
+      addToast(`${pid}: ${data.outcome?.replace(/_/g, ' ')}`, 'success')
       await refresh()
       if (detail?.payment?.payment_id === pid) {
         const d = await fetch(`${API}/payments/${pid}`).then(r => r.json())
         setDetail(d)
       }
-    } catch { setError('Action failed') }
+    } catch {
+      setError('Action failed')
+      addToast('Decision action failed', 'error')
+    }
     setApproving(false)
   }
 
@@ -1132,12 +1313,16 @@ function App() {
     try {
       await fetch(`${API}/decisions/${pid}/reject`, { method: 'POST' })
       setLastAction(`${pid}: marked churned`)
+      addToast(`${pid}: marked churned`, 'warning')
       await refresh()
       if (detail?.payment?.payment_id === pid) {
         const d = await fetch(`${API}/payments/${pid}`).then(r => r.json())
         setDetail(d)
       }
-    } catch { setError('Action failed') }
+    } catch {
+      setError('Action failed')
+      addToast('Reject action failed', 'error')
+    }
     setApproving(false)
   }
 
@@ -1151,7 +1336,11 @@ function App() {
       }).then(r => r.json())
       setConfig(data)
       setLastAction('Policy saved')
-    } catch { setError('Save failed') }
+      addToast('Merchant policy saved', 'success')
+    } catch {
+      setError('Save failed')
+      addToast('Failed to save policy', 'error')
+    }
     setSaving(false)
   }
 
@@ -1220,7 +1409,7 @@ function App() {
         {tab === 'detail' && detail ? (
           <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} />
         ) : tab === 'overview' ? (
-          <OverviewPage overview={overview} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} />
+          <OverviewPage overview={overview} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} />
         ) : tab === 'decisions' ? (
           <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} />
         ) : tab === 'payments' ? (
@@ -1232,6 +1421,7 @@ function App() {
         ) : null}
       </div>
 
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} />
     </div>
   )
