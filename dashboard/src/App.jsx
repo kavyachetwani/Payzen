@@ -426,7 +426,7 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions }) {
 
 // ─── DECISIONS (TIER 3) ─────────────────────────────────────
 
-function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving }) {
+function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, onChat }) {
   if (!decisions || decisions.length === 0) {
     return (
       <div className="text-center py-32">
@@ -478,9 +478,9 @@ function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving })
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => onApprove(d.payment_id, 'approve_conversation')} disabled={approving}
+              <button onClick={() => { onApprove(d.payment_id, 'approve_conversation'); if (onChat) onChat(d.payment_id) }} disabled={approving}
                 className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition">
-                Start Recovery Conversation
+                Start Recovery Chat
               </button>
               {d.suggested_downgrade && (
                 <button onClick={() => onApprove(d.payment_id, 'offer_downgrade')} disabled={approving}
@@ -949,6 +949,117 @@ function DetailView({ detail, onBack, onApprove, onReject }) {
 
 // ─── APP ─────────────────────────────────────────────────────
 
+// ─── CHAT WIDGET ──────────────────────────────────────────
+
+function ChatWidget({ paymentId, onClose }) {
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [ended, setEnded] = useState(false)
+  const [state, setState] = useState(null)
+
+  useEffect(() => {
+    if (!paymentId) return
+    setMessages([])
+    setEnded(false)
+    setState(null)
+    fetch(`${API}/escalate/${paymentId}`, { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.agent_message) {
+          setMessages([{ role: 'agent', text: data.agent_message }])
+          setState(data.state)
+        }
+      })
+  }, [paymentId])
+
+  const send = async () => {
+    if (!input.trim() || ended) return
+    const msg = input.trim()
+    setInput('')
+    setMessages(prev => [...prev, { role: 'customer', text: msg }])
+    setLoading(true)
+    try {
+      const res = await fetch(`${API}/escalate/${paymentId}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg }),
+      })
+      const data = await res.json()
+      if (data.agent_message) {
+        setMessages(prev => [...prev, { role: 'agent', text: data.agent_message }])
+        setState(data.state)
+        if (data.conversation_ended) setEnded(true)
+      }
+    } catch {}
+    setLoading(false)
+  }
+
+  if (!paymentId) return null
+
+  return (
+    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50" style={{ maxHeight: '500px' }}>
+      <div className="bg-emerald-600 text-white px-4 py-3 rounded-t-2xl flex justify-between items-center">
+        <div>
+          <p className="text-sm font-semibold">Recovery Chat</p>
+          <p className="text-xs opacity-80">{paymentId}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {state?.scenario && state.scenario !== 'unknown' && (
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{state.scenario.replace(/_/g, ' ')}</span>
+          )}
+          <button onClick={onClose} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ minHeight: '200px', maxHeight: '340px' }}>
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'agent' ? 'justify-start' : 'justify-end'}`}>
+            <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+              m.role === 'agent'
+                ? 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                : 'bg-emerald-500 text-white rounded-br-sm'
+            }`}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 px-3 py-2 rounded-2xl rounded-bl-sm text-sm text-gray-400">typing...</div>
+          </div>
+        )}
+        {ended && state?.outcome && (
+          <div className="text-center">
+            <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+              state.outcome === 'promise_to_pay' ? 'bg-emerald-100 text-emerald-700' :
+              state.outcome === 'interested_in_downgrade' ? 'bg-blue-100 text-blue-700' :
+              state.outcome === 'wants_callback' ? 'bg-amber-100 text-amber-700' :
+              state.outcome === 'needs_human_escalation' ? 'bg-red-100 text-red-700' :
+              'bg-gray-100 text-gray-600'
+            }`}>
+              Outcome: {state.outcome.replace(/_/g, ' ')}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {!ended && (
+        <div className="border-t border-gray-100 p-3 flex gap-2">
+          <input value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && send()}
+            placeholder="Customer's response..."
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+          <button onClick={send} disabled={loading || !input.trim()}
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-xl transition">
+            Send
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function App() {
   const [tab, setTab] = useState('overview')
   const [overview, setOverview] = useState(null)
@@ -963,6 +1074,7 @@ function App() {
   const [error, setError] = useState(null)
   const [lastAction, setLastAction] = useState(null)
   const [outcomeFilter, setOutcomeFilter] = useState('')
+  const [chatPaymentId, setChatPaymentId] = useState(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -1110,7 +1222,7 @@ function App() {
         ) : tab === 'overview' ? (
           <OverviewPage overview={overview} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} />
         ) : tab === 'decisions' ? (
-          <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} />
+          <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} />
         ) : tab === 'payments' ? (
           <PaymentsTable payments={payments} onSelect={selectPayment} initialOutcomeFilter={outcomeFilter} />
         ) : tab === 'activity' ? (
@@ -1119,6 +1231,8 @@ function App() {
           <SettingsPanel config={config} onSave={saveConfig} saving={saving} />
         ) : null}
       </div>
+
+      <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} />
     </div>
   )
 }

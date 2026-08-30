@@ -28,8 +28,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.pipeline import PipelineServer
+from voice.escalation_agent import EscalationAgent
 
-app = FastAPI(title="AI Revenue Recovery", version="0.2.0")
+app = FastAPI(title="AI Revenue Recovery", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,6 +41,7 @@ app.add_middleware(
 )
 
 pipeline = PipelineServer()
+escalation_agent = EscalationAgent(brand_name="YourBrand", use_llm=True)
 
 
 class ConfigUpdate(BaseModel):
@@ -55,6 +57,10 @@ class ConfigUpdate(BaseModel):
 
 class DecisionResponse(BaseModel):
     response: str = "approve_conversation"
+
+
+class ChatMessage(BaseModel):
+    message: str
 
 
 # ── Batch ──
@@ -131,6 +137,40 @@ def get_payment_detail(payment_id: str):
     if detail is None:
         return {"error": "not_found", "message": f"Payment {payment_id} not found"}
     return detail
+
+
+# ── Escalation Chat ──
+
+@app.post("/api/escalate/{payment_id}")
+def start_escalation(payment_id: str):
+    decision = pipeline.business_decisions.get(payment_id)
+    if decision is None:
+        return {"error": "not_found", "message": f"No business decision for {payment_id}"}
+    config = pipeline.get_config()
+    escalation_agent.brand_name = config.get("brand_name", "YourBrand")
+    result = escalation_agent.start_conversation(
+        payment_id=payment_id,
+        customer_id=decision["customer_id"],
+        amount=decision["amount"],
+        payment_category=decision.get("payment_category", ""),
+    )
+    return result
+
+
+@app.post("/api/escalate/{payment_id}/message")
+def send_escalation_message(payment_id: str, body: ChatMessage):
+    result = escalation_agent.process_customer_message(payment_id, body.message)
+    if "error" in result:
+        return {"error": result["error"], "message": f"No active conversation for {payment_id}"}
+    return result
+
+
+@app.get("/api/escalate/{payment_id}/state")
+def get_escalation_state(payment_id: str):
+    state = escalation_agent.get_conversation(payment_id)
+    if state is None:
+        return {"error": "not_found", "message": f"No conversation for {payment_id}"}
+    return state
 
 
 # ── Legacy endpoints (backwards compat) ──
