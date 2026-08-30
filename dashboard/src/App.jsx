@@ -303,6 +303,21 @@ styleTag.textContent = `
     to { opacity: 1; }
   }
   .animate-count { animation: count-fade 0.6s ease-out; }
+
+  @keyframes card-exit {
+    0% { opacity: 1; transform: translateX(0); max-height: 300px; margin-bottom: 12px; }
+    50% { opacity: 0; transform: translateX(60px); max-height: 300px; margin-bottom: 12px; }
+    100% { opacity: 0; transform: translateX(60px); max-height: 0; margin-bottom: 0; padding: 0; overflow: hidden; }
+  }
+  .animate-card-exit { animation: card-exit 0.5s ease-in-out forwards; pointer-events: none; }
+  .animate-card-exit-success { animation: card-exit 0.5s ease-in-out forwards; pointer-events: none; }
+  .animate-card-exit-success::before {
+    content: ''; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.08); border-radius: inherit; z-index: 1;
+  }
+  .animate-card-exit-reject { animation: card-exit 0.5s ease-in-out forwards; pointer-events: none; }
+  .animate-card-exit-reject::before {
+    content: ''; position: absolute; inset: 0; background: rgba(239, 68, 68, 0.08); border-radius: inherit; z-index: 1;
+  }
 `
 if (!document.getElementById('stage-11-5-styles')) {
   styleTag.id = 'stage-11-5-styles'
@@ -358,37 +373,67 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBa
   const hasDecisions = o.decisions_pending > 0
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Revenue at Risk */}
-      <section className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center animate-card-enter">
-        <p className="text-sm font-medium text-red-400 uppercase tracking-wider mb-1">Revenue at Risk</p>
-        <h2 className="text-5xl font-bold text-red-600 mb-2 animate-count">{fmtFull(Math.round(animAtRisk))}</h2>
-        <p className="text-red-400">{o.total_payments} failed payments this cycle</p>
+    <div className="space-y-6 pb-12">
+      {/* Revenue at Risk — compact hero */}
+      <section className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center animate-card-enter">
+        <p className="text-sm font-medium text-red-400 uppercase tracking-wider mb-0.5">Revenue at Risk</p>
+        <h2 className="text-4xl font-bold text-red-600 mb-1 animate-count">{fmtFull(Math.round(animAtRisk))}</h2>
+        <p className="text-red-400 text-sm">{o.total_payments} failed payments this cycle</p>
+      </section>
+
+      {/* Recovery Results — immediately visible, no scrolling */}
+      <section>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center animate-card-enter">
+            <p className="text-sm text-emerald-500 font-medium mb-1">Net Recovered</p>
+            <p className="text-4xl font-bold text-emerald-600 animate-count">{fmt(Math.round(animNetRecovered))}</p>
+            <p className="text-sm text-emerald-400 mt-1">from {fmtFull(o.total_at_risk)} at risk</p>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center animate-card-enter" style={{ animationDelay: '100ms' }}>
+            <p className="text-sm text-blue-500 font-medium mb-1">Recovery Rate</p>
+            <div className="relative w-20 h-20 mx-auto my-1">
+              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#dbeafe" strokeWidth="8" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#3b82f6" strokeWidth="8"
+                  strokeDasharray={`${animRecoveryRate * 264} 264`} strokeLinecap="round"
+                  className="animate-ring" />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-blue-600">
+                {pct(animRecoveryRate)}
+              </span>
+            </div>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 text-center animate-card-enter" style={{ animationDelay: '200ms' }}>
+            <p className="text-sm text-purple-500 font-medium mb-1">ROI</p>
+            <p className="text-4xl font-bold text-purple-600 animate-count">{Math.round(animRoi).toLocaleString()}x</p>
+            <p className="text-sm text-purple-400 mt-1">{fmtFull(o.total_cost)} spent → {fmt(o.net_recovered)}</p>
+          </div>
+        </div>
       </section>
 
       {/* Tier summary */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
           <p className="text-xs text-emerald-500 uppercase tracking-wider mb-1">Tier 1 & 2 — Auto-executed</p>
-          <p className="text-3xl font-bold text-emerald-600">{o.auto_executed || 0}</p>
+          <p className="text-2xl font-bold text-emerald-600">{o.auto_executed || 0}</p>
           <p className="text-xs text-emerald-400 mt-1">retries, SMS, calls — all automated</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
           <p className="text-xs text-blue-500 uppercase tracking-wider mb-1">Non-retryable</p>
-          <p className="text-3xl font-bold text-blue-600">{o.outcome_distribution?.card_update_sent || 0} + {o.outcome_distribution?.mandate_resequenced || 0}</p>
+          <p className="text-2xl font-bold text-blue-600">{o.outcome_distribution?.card_update_sent || 0} + {o.outcome_distribution?.mandate_resequenced || 0}</p>
           <p className="text-xs text-blue-400 mt-1">card updates + mandate resequences</p>
         </div>
         {hasDecisions ? (
           <button onClick={onNavigateDecisions}
-            className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center hover:shadow-md transition cursor-pointer">
+            className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center hover:shadow-md transition cursor-pointer">
             <p className="text-xs text-amber-500 uppercase tracking-wider mb-1">Tier 3 — Your Decisions</p>
-            <p className="text-3xl font-bold text-amber-600">{o.decisions_pending}</p>
+            <p className="text-2xl font-bold text-amber-600">{o.decisions_pending}</p>
             <p className="text-xs text-amber-400 mt-1">{fmtFull(o.decisions_amount)} needing review</p>
           </button>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Tier 3 — Decisions</p>
-            <p className="text-3xl font-bold text-gray-400">0</p>
+            <p className="text-2xl font-bold text-gray-400">0</p>
             <p className="text-xs text-gray-400 mt-1">all business decisions resolved</p>
           </div>
         )}
@@ -436,37 +481,6 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBa
         <h3 className="text-lg font-semibold text-gray-700 mb-1">Recovery Timeline</h3>
         <p className="text-sm text-gray-400 mb-4">Cumulative net ₹ recovered over simulated time</p>
         <SvgLineChart data={o.timeline || []} baseline={NAIVE_BASELINE} />
-      </section>
-
-      {/* Recovery Results */}
-      <section>
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Recovery Results</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center animate-card-enter">
-            <p className="text-sm text-emerald-500 font-medium mb-1">Net Recovered</p>
-            <p className="text-4xl font-bold text-emerald-600 animate-count">{fmt(Math.round(animNetRecovered))}</p>
-            <p className="text-sm text-emerald-400 mt-1">from {fmtFull(o.total_at_risk)} at risk</p>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center animate-card-enter" style={{ animationDelay: '100ms' }}>
-            <p className="text-sm text-blue-500 font-medium mb-1">Recovery Rate</p>
-            <div className="relative w-24 h-24 mx-auto my-2">
-              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#dbeafe" strokeWidth="8" />
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#3b82f6" strokeWidth="8"
-                  strokeDasharray={`${animRecoveryRate * 264} 264`} strokeLinecap="round"
-                  className="animate-ring" />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-blue-600">
-                {pct(animRecoveryRate)}
-              </span>
-            </div>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center animate-card-enter" style={{ animationDelay: '200ms' }}>
-            <p className="text-sm text-purple-500 font-medium mb-1">ROI</p>
-            <p className="text-4xl font-bold text-purple-600 animate-count">{Math.round(animRoi).toLocaleString()}x</p>
-            <p className="text-sm text-purple-400 mt-1">{fmtFull(o.total_cost)} spent → {fmt(o.net_recovered)}</p>
-          </div>
-        </div>
       </section>
 
       {/* Before vs After */}
@@ -581,7 +595,7 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBa
 
 // ─── DECISIONS (TIER 3) ─────────────────────────────────────
 
-function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, onChat }) {
+function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, onChat, dismissingIds }) {
   if (!decisions || decisions.length === 0) {
     return (
       <div className="text-center py-32">
@@ -611,46 +625,54 @@ function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, o
       </div>
 
       <div className="space-y-3">
-        {decisions.map(d => (
-          <div key={d.payment_id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition animate-card-enter"
-            style={{ animationDelay: `${decisions.indexOf(d) * 60}ms` }}>
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <button onClick={() => onSelect(d.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-sm font-medium">
-                  {d.payment_id}
-                </button>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {d.customer_id} · {d.bank_name} · {d.payment_method?.replace(/_/g, ' ')} · {d.payment_category}
-                </p>
+        {decisions.map((d, idx) => {
+          const dismissState = dismissingIds?.[d.payment_id]
+          const exitClass = dismissState === 'success' ? 'animate-card-exit-success' :
+                            dismissState === 'reject' ? 'animate-card-exit-reject' :
+                            dismissState ? 'animate-card-exit' : ''
+          return (
+            <div key={d.payment_id}
+              className={`relative bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition
+                ${exitClass || 'animate-card-enter'}`}
+              style={!exitClass ? { animationDelay: `${idx * 60}ms` } : undefined}>
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <button onClick={() => onSelect(d.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-sm font-medium">
+                    {d.payment_id}
+                  </button>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {d.customer_id} · {d.bank_name} · {d.payment_method?.replace(/_/g, ' ')} · {d.payment_category}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-gray-800">{fmtFull(d.amount)}<span className="text-xs text-gray-400 font-normal">/month</span></p>
+                  <TierBadge tier={3} />
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-xl font-bold text-gray-800">{fmtFull(d.amount)}<span className="text-xs text-gray-400 font-normal">/month</span></p>
-                <TierBadge tier={3} />
+
+              <div className="bg-gray-50 rounded-lg p-3 mb-3 text-sm text-gray-600">
+                {d.recommendation}
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => { onApprove(d.payment_id, 'approve_conversation'); if (onChat) onChat(d.payment_id) }} disabled={approving || !!dismissState}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition">
+                  Start Recovery Chat
+                </button>
+                {d.suggested_downgrade && (
+                  <button onClick={() => onApprove(d.payment_id, 'offer_downgrade')} disabled={approving || !!dismissState}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition">
+                    Offer ₹{d.suggested_downgrade?.toLocaleString('en-IN')}/mo
+                  </button>
+                )}
+                <button onClick={() => onReject(d.payment_id)} disabled={approving || !!dismissState}
+                  className="px-4 py-2 bg-white border border-red-300 hover:bg-red-50 disabled:bg-gray-100 text-red-600 text-sm font-medium rounded-lg transition">
+                  Mark Churned
+                </button>
               </div>
             </div>
-
-            <div className="bg-gray-50 rounded-lg p-3 mb-3 text-sm text-gray-600">
-              {d.recommendation}
-            </div>
-
-            <div className="flex gap-2">
-              <button onClick={() => { onApprove(d.payment_id, 'approve_conversation'); if (onChat) onChat(d.payment_id) }} disabled={approving}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition">
-                Start Recovery Chat
-              </button>
-              {d.suggested_downgrade && (
-                <button onClick={() => onApprove(d.payment_id, 'offer_downgrade')} disabled={approving}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition">
-                  Offer ₹{d.suggested_downgrade?.toLocaleString('en-IN')}/mo
-                </button>
-              )}
-              <button onClick={() => onReject(d.payment_id)} disabled={approving}
-                className="px-4 py-2 bg-white border border-red-300 hover:bg-red-50 disabled:bg-gray-100 text-red-600 text-sm font-medium rounded-lg transition">
-                Mark Churned
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -1107,18 +1129,23 @@ function DetailView({ detail, onBack, onApprove, onReject }) {
 
 // ─── CHAT WIDGET ──────────────────────────────────────────
 
-function ChatWidget({ paymentId, onClose }) {
+function ChatWidget({ paymentId, onClose, onChatComplete }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [ended, setEnded] = useState(false)
   const [state, setState] = useState(null)
+  const [chatError, setChatError] = useState(null)
+  const [lastFailedMsg, setLastFailedMsg] = useState(null)
+  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     if (!paymentId) return
     setMessages([])
     setEnded(false)
     setState(null)
+    setChatError(null)
+    setLastFailedMsg(null)
     fetch(`${API}/escalate/${paymentId}`, { method: 'POST' })
       .then(r => r.json())
       .then(data => {
@@ -1127,13 +1154,20 @@ function ChatWidget({ paymentId, onClose }) {
           setState(data.state)
         }
       })
+      .catch(() => setChatError('Failed to start conversation'))
   }, [paymentId])
 
-  const send = async () => {
-    if (!input.trim() || ended) return
-    const msg = input.trim()
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading, ended])
+
+  const send = async (overrideMsg) => {
+    const msg = overrideMsg || input.trim()
+    if (!msg || ended) return
     setInput('')
-    setMessages(prev => [...prev, { role: 'customer', text: msg }])
+    setChatError(null)
+    setLastFailedMsg(null)
+    if (!overrideMsg) setMessages(prev => [...prev, { role: 'customer', text: msg }])
     setLoading(true)
     try {
       const res = await fetch(`${API}/escalate/${paymentId}/message`, {
@@ -1142,19 +1176,40 @@ function ChatWidget({ paymentId, onClose }) {
         body: JSON.stringify({ message: msg }),
       })
       const data = await res.json()
-      if (data.agent_message) {
+      if (data.error) {
+        setChatError(data.message || 'Conversation error')
+        setLastFailedMsg(msg)
+      } else if (data.agent_message) {
         setMessages(prev => [...prev, { role: 'agent', text: data.agent_message }])
         setState(data.state)
         if (data.conversation_ended) setEnded(true)
       }
-    } catch {}
+    } catch {
+      setChatError('Network error — check backend')
+      setLastFailedMsg(msg)
+    }
     setLoading(false)
+  }
+
+  const handleClose = () => {
+    if (ended && onChatComplete) {
+      onChatComplete(paymentId, state?.outcome)
+    }
+    onClose()
   }
 
   if (!paymentId) return null
 
+  const outcomeConfig = {
+    promise_to_pay: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: '✓', label: 'Customer agreed to pay' },
+    interested_in_downgrade: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: '↓', label: 'Interested in downgrade' },
+    wants_callback: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: '↻', label: 'Callback requested' },
+    needs_human_escalation: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: '⚠', label: 'Needs human escalation' },
+    refused: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: '✗', label: 'Customer refused' },
+  }
+
   return (
-    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50" style={{ maxHeight: '500px' }}>
+    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50" style={{ maxHeight: '520px' }}>
       <div className="bg-emerald-600 text-white px-4 py-3 rounded-t-2xl flex justify-between items-center">
         <div>
           <p className="text-sm font-semibold">Recovery Chat</p>
@@ -1164,7 +1219,7 @@ function ChatWidget({ paymentId, onClose }) {
           {state?.scenario && state.scenario !== 'unknown' && (
             <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{state.scenario.replace(/_/g, ' ')}</span>
           )}
-          <button onClick={onClose} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
+          <button onClick={handleClose} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
         </div>
       </div>
 
@@ -1185,28 +1240,41 @@ function ChatWidget({ paymentId, onClose }) {
             <div className="bg-gray-100 px-3 py-2 rounded-2xl rounded-bl-sm text-sm text-gray-400">typing...</div>
           </div>
         )}
-        {ended && state?.outcome && (
-          <div className="text-center">
-            <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-              state.outcome === 'promise_to_pay' ? 'bg-emerald-100 text-emerald-700' :
-              state.outcome === 'interested_in_downgrade' ? 'bg-blue-100 text-blue-700' :
-              state.outcome === 'wants_callback' ? 'bg-amber-100 text-amber-700' :
-              state.outcome === 'needs_human_escalation' ? 'bg-red-100 text-red-700' :
-              'bg-gray-100 text-gray-600'
-            }`}>
-              Outcome: {state.outcome.replace(/_/g, ' ')}
-            </span>
+        {chatError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+            <p className="text-sm text-red-600 mb-2">{chatError}</p>
+            {lastFailedMsg && (
+              <button onClick={() => send(lastFailedMsg)}
+                className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-lg transition">
+                Retry
+              </button>
+            )}
           </div>
         )}
+        {ended && state?.outcome && (() => {
+          const oc = outcomeConfig[state.outcome] || outcomeConfig.refused
+          return (
+            <div className={`${oc.bg} ${oc.border} border rounded-xl p-4 text-center animate-card-enter`}>
+              <div className={`text-2xl mb-1`}>{oc.icon}</div>
+              <p className={`text-sm font-semibold ${oc.text}`}>{oc.label}</p>
+              <p className="text-xs text-gray-500 mt-1">{state.outcome.replace(/_/g, ' ')}</p>
+              <button onClick={handleClose}
+                className={`mt-3 px-4 py-1.5 ${oc.bg} ${oc.border} border ${oc.text} text-sm font-medium rounded-lg hover:shadow-sm transition`}>
+                Close
+              </button>
+            </div>
+          )
+        })()}
+        <div ref={messagesEndRef} />
       </div>
 
-      {!ended && (
+      {!ended && !chatError && (
         <div className="border-t border-gray-100 p-3 flex gap-2">
           <input value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && send()}
             placeholder="Customer's response..."
             className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-          <button onClick={send} disabled={loading || !input.trim()}
+          <button onClick={() => send()} disabled={loading || !input.trim()}
             className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-xl transition">
             Send
           </button>
@@ -1233,6 +1301,7 @@ function App() {
   const [chatPaymentId, setChatPaymentId] = useState(null)
   const [toasts, setToasts] = useState([])
   const [batchActivity, setBatchActivity] = useState([])
+  const [dismissingIds, setDismissingIds] = useState({})
   const toastId = useRef(0)
 
   const addToast = useCallback((message, type = 'info') => {
@@ -1314,6 +1383,9 @@ function App() {
       await fetch(`${API}/decisions/${pid}/reject`, { method: 'POST' })
       setLastAction(`${pid}: marked churned`)
       addToast(`${pid}: marked churned`, 'warning')
+      setDismissingIds(prev => ({ ...prev, [pid]: 'reject' }))
+      await new Promise(r => setTimeout(r, 500))
+      setDismissingIds(prev => { const n = { ...prev }; delete n[pid]; return n })
       await refresh()
       if (detail?.payment?.payment_id === pid) {
         const d = await fetch(`${API}/payments/${pid}`).then(r => r.json())
@@ -1353,6 +1425,22 @@ function App() {
     setOutcomeFilter(outcomeFilter)
     setTab('payments')
   }
+
+  const handleChatComplete = useCallback((pid, outcome) => {
+    const exitType = (outcome === 'promise_to_pay' || outcome === 'interested_in_downgrade') ? 'success' : 'reject'
+    setDismissingIds(prev => ({ ...prev, [pid]: exitType }))
+    setTimeout(() => {
+      setDismissingIds(prev => { const n = { ...prev }; delete n[pid]; return n })
+      refresh()
+    }, 500)
+  }, [refresh])
+
+  const handleTabSwitch = useCallback((id) => {
+    setTab(id)
+    setDetail(null)
+    if (id !== 'payments') setOutcomeFilter('')
+    if (id === 'overview') refresh()
+  }, [refresh])
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -1394,7 +1482,7 @@ function App() {
       <div className="max-w-7xl mx-auto px-6 mt-4">
         <nav className="flex gap-1 border-b border-gray-200 mb-6">
           {tabs.map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); setDetail(null); if (t.id !== 'payments') setOutcomeFilter('') }}
+            <button key={t.id} onClick={() => handleTabSwitch(t.id)}
               className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px flex items-center gap-1.5
                 ${tab === t.id || (tab === 'detail' && t.id === 'payments')
                   ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
@@ -1411,7 +1499,7 @@ function App() {
         ) : tab === 'overview' ? (
           <OverviewPage overview={overview} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} />
         ) : tab === 'decisions' ? (
-          <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} />
+          <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} dismissingIds={dismissingIds} />
         ) : tab === 'payments' ? (
           <PaymentsTable payments={payments} onSelect={selectPayment} initialOutcomeFilter={outcomeFilter} />
         ) : tab === 'activity' ? (
@@ -1422,7 +1510,7 @@ function App() {
       </div>
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-      <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} />
+      <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} onChatComplete={handleChatComplete} />
     </div>
   )
 }
