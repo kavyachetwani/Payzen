@@ -63,6 +63,75 @@
 - Changed `conftest.py` to read fallback JSON files eagerly at module level (import time) instead of lazily in fixtures
 - Patched `AuditLogger.flush_to_json` to a no-op in `test_api.py`'s module-scoped fixture
 
+## Bug #2 — Constraint tracker blind to Phase 1 contacts (Stage 9)
+
+**Impact:** per-customer contact limits silently violated — one customer got 2 calls (max 1), another got 5 SMS (max 3), a DND customer got an SMS
+
+**What happened:**
+
+The retry pipeline has two phases. Phase 1 processes all 500 payments through the LangGraph graph, classifies them as retryable or non-retryable, and schedules first retry attempts into the SimClock event queue. Phase 2 pops events from the queue and executes them — simulate the retry, log the outcome, schedule the next attempt if needed.
+
+The `ConstraintTracker` enforces operational limits: max 1 call per customer per 30-day cycle, max 3 SMS per cycle, daily call budget of 30. It works by recording each contact in a sliding-window counter when `apply_constraints()` is called. The problem was where it got called.
+
+In Phase 2, `process_retry_event()` called `apply_constraints()` — but only when scheduling the *next* attempt. The current attempt's action came from the queue payload, already decided, and was executed directly without going through the tracker. And in Phase 1, the tracker was never called at all. The graph's internal compliance node ran, but it's a separate system — it flags violations for the audit log but doesn't feed into the ConstraintTracker's counters.
+
+So the tracker was always one step behind, and completely blind to Phase 1.
+
+**How I found it:**
+
+Three stopping-stress tests failed on first run:
+- `test_max_1_call_per_customer`: CUST_00314 had 2 call events — PAY_00029 (attempt 1, scheduled in Phase 1) and PAY_00137 (attempt 2, scheduled in Phase 2). The Phase 1 call was invisible to the tracker, so when Phase 2 scheduled PAY_00137's call, the tracker saw zero prior calls for CUST_00314 and let it through.
+- `test_max_3_sms_per_customer`: CUST_00348 had 5 SMS events across 3 different payments (PAY_00118, PAY_00371, PAY_00255 with 3 attempts). Same root cause — initial SMS contacts from Phase 1 never recorded.
+- `test_dnd_customers_no_contact`: CUST_00176 is in the DND opt-out set (seeded with `np.random.RandomState(99)`, 13 of 277 customers). PAY_00049 got scheduled with `sms_then_retry` in Phase 1. The `dnd_set` was computed but never checked before scheduling.
+
+I queried the audit events for each customer, saw contacts from multiple payments, and traced the scheduling path back to `run_batch_multi.py` Phase 1 — no `apply_constraints()` call anywhere in that block.
+
+**Fix:**
+
+Three changes:
+
+1. Added DND check in Phase 1 before scheduling (`run_batch_multi.py`): `if customer_id in dnd_set and action in ("sms_then_retry", "call_then_retry"): action = "auto_retry"`. Same pattern that already existed in `process_retry_event` for the next action, just applied to the initial action too.
+
+2. Added `constraint_tracker.apply_constraints(action, customer_id, scheduled_time, payment_id)` in Phase 1 after deciding the action. This records the contact in the tracker so Phase 2 sees it.
+
+3. Added DND recheck + `apply_constraints()` at the top of `process_retry_event()` for the *current* action before executing it. Previously only the next scheduled action went through constraints; now the current one does too.
+
+**Takeaway:** If you have a stateful enforcement layer (the ConstraintTracker), every code path that takes the enforced action needs to go through it. Having it in one phase but not the other is worse than not having it at all — it creates false confidence that limits are being respected.
+
+---
+
+## Bug #3 — Audit trail logged pre-constraint action (Stage 9)
+
+**Impact:** audit events showed contact actions that didn't actually happen — phantom calls and SMS in the compliance log
+
+**What happened:**
+
+This one fell out of fixing Bug #2. After adding constraint enforcement to both phases, the actual executed action could now differ from the originally scheduled action. For example, the bandit recommends `call_then_retry`, but at execution time the tracker sees the customer already had a call this cycle and downgrades to `sms_then_retry` (or `auto_retry` if SMS is also exhausted).
+
+But `run_batch_multi.py` logged the event like this:
+
+```python
+logger.log_event({
+    "action_type": payload["action_type"],       # from queue — pre-constraint
+    "actual_action": payload["action_type"],      # same thing
+    "downgrade_reason": None,
+})
+```
+
+It used `payload["action_type"]` — the action as originally scheduled in the queue, before any constraint checking. So even after the fix, the audit trail would show `call_then_retry` for an action that actually executed as `auto_retry`. The stopping-stress tests count actual logged events, so they'd still see violations that don't exist in reality.
+
+**How I found it:**
+
+After fixing constraint enforcement, the constraint tests still failed intermittently — the tracker was correctly downgrading actions, but the logged events didn't reflect it. Traced the audit event construction in `run_batch_multi.py` and saw it was pulling from the raw payload, not from the `process_retry_event` result.
+
+**Fix:**
+
+Added `actual_action` field to all three return paths in `process_retry_event()` (recovered, escalated, scheduled_next). Updated the caller in `run_batch_multi.py` to use `result["actual_action"]` instead of `payload["action_type"]`, and set `downgrade_reason` to `"constraint_downgrade"` when they differ.
+
+**Takeaway:** Constraint enforcement and audit logging need to read from the same source of truth. If enforcement happens inside a function but the caller logs the pre-enforcement input, your audit trail contradicts your actual behavior — which is exactly the kind of discrepancy a compliance audit would flag.
+
+---
+
 ## Final Test Results
 
 ```
