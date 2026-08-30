@@ -1,0 +1,10 @@
+{
+  "sms_enabled": true,
+  "calls_enabled": true,
+  "call_min_amount": 2000,
+  "sms_template": "Your {service} payment of \u20b9{amount} could not be processed. Tap to retry: {link}",
+  "call_tone": "empathetic",
+  "brand_name": "Demo Store",
+  "auto_escalate": false,
+  "max_discount_percent": 0
+}

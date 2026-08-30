@@ -39,10 +39,12 @@ def test_no_negative_amounts(summaries):
         assert s.get("total_amount_recovered", 0) >= 0, f"{s['payment_id']}: negative recovered"
 
 
-def test_outcome_counts_add_up(summaries):
+def test_outcome_counts_add_up(summaries, events):
     outcomes = Counter(s["final_outcome"] for s in summaries)
     total = sum(outcomes.values())
-    assert total == 500, f"Outcome total {total} != 500. Distribution: {dict(outcomes)}"
+    tier3_pending = sum(1 for e in events if e.get("tier") == 3 and e.get("action_type") == "awaiting_decision")
+    expected = 500 - tier3_pending
+    assert total == expected, f"Outcome total {total} != {expected} (500 - {tier3_pending} T3 pending). Distribution: {dict(outcomes)}"
 
 
 def test_known_outcomes_only(summaries):

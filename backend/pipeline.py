@@ -1,10 +1,12 @@
-"""Pipeline logic refactored for the dashboard backend.
+"""Tiered approval pipeline for the AI Revenue Recovery dashboard.
 
-Two modes:
-- run_batch(): Phase 1 processing — auto-approved actions execute immediately,
-  require_approval actions are queued as pending
-- approve_action(): Executes a pending action, potentially schedules retries
-- process_pending_retries(): Processes any retry events that are due
+Three tiers:
+- Tier 1: Fully automated (retries, card updates, mandate resequences, constraints)
+- Tier 2: Merchant policy applied once (SMS/call preferences, call min amount)
+- Tier 3: Business decisions requiring merchant judgment (mandate_revoked offers,
+  write-offs, policy exceptions)
+
+Only Tier 3 items appear in the decisions queue.
 """
 
 import json
@@ -35,9 +37,21 @@ from decision.constraints import ConstraintTracker
 from decision.stopping import UPI_ATTEMPT_MIN_HOURS
 from decision.policy import max_attempts, is_retryable as check_retryable
 
+from backend.merchant_config import MerchantConfig
+
 DATA_PATH = Path(__file__).parent.parent / "data" / "failed_payments.json"
 BANDIT_CONFIG = Path(__file__).parent.parent / "decision" / "bandit_config.json"
 RETRY_DATA = Path(__file__).parent.parent / "data" / "retry_outcomes.json"
+
+TIER_3_CAUSES = {"mandate_revoked"}
+
+TIER_3_RECOMMENDATIONS = {
+    "mandate_revoked": {
+        "type": "recovery_conversation",
+        "summary": "Customer cancelled their mandate. Recommend a recovery conversation to understand the reason and offer re-enrollment or a plan adjustment.",
+        "options": ["approve_conversation", "offer_downgrade", "mark_churned"],
+    },
+}
 
 
 def _init_bandit():
@@ -84,8 +98,11 @@ class PipelineServer:
         self.history = {}
         self.diagnosis_cache = {}
         self.pending_actions = {}
+        self.business_decisions = {}
         self.payment_status = {}
+        self.activity_feed = []
         self.batch_run = False
+        self.merchant_config = MerchantConfig()
 
     def reset(self):
         self.records = json.loads(DATA_PATH.read_text())
@@ -105,21 +122,28 @@ class PipelineServer:
         self.history = {}
         self.diagnosis_cache = {}
         self.pending_actions = {}
+        self.business_decisions = {}
         self.payment_status = {}
+        self.activity_feed = []
         self.batch_run = False
 
     def run_batch(self) -> dict:
-        """Phase 1: process all payments. Auto-approved execute; require_approval queued."""
+        """Process all payments with tiered approval.
+
+        Tier 1/2 actions execute immediately. Only Tier 3 (mandate_revoked
+        business decisions) are queued for merchant review.
+        """
         self.reset()
         self.batch_run = True
 
         app = build_graph()
         dnd_set = get_dnd_set()
+        config = self.merchant_config
 
         counts = {
             "total": len(self.records),
-            "auto_approved": 0,
-            "pending_approval": 0,
+            "auto_executed": 0,
+            "business_decisions": 0,
             "gate_blocked": 0,
             "non_retryable": 0,
         }
@@ -142,84 +166,147 @@ class PipelineServer:
             outcome = final_state.get("action_outcome", {})
 
             self.diagnosis_cache[r["payment_id"]] = diag
+            cause = diag.get("cause", "unknown")
 
             if not gate.get("approved", True):
                 counts["gate_blocked"] += 1
                 self._log_gate_blocked(r, final_state, diag, gate, outcome)
                 self.payment_status[r["payment_id"]] = {
                     "status": "gate_blocked",
-                    "cause": diag.get("cause", "unknown"),
+                    "cause": cause,
                     "final_outcome": "gate_blocked",
                     "amount_recovered": 0.0,
                     "action_cost": 0.0,
-                    "gate_reason": gate.get("reason", "compliance violation"),
+                    "tier": 1,
                 }
+                self._add_activity(r, "gate_blocked", "gate_blocked", False, 0, 0,
+                                   gate.get("reason", "compliance violation"))
                 continue
 
             is_retryable = decision.get("is_retryable", False)
 
             if not is_retryable:
+                # Tier 3 check: mandate_revoked → business decision
+                if cause in TIER_3_CAUSES:
+                    counts["business_decisions"] += 1
+                    self._create_business_decision(r, diag, final_state)
+                    continue
+
                 counts["non_retryable"] += 1
                 self._log_non_retryable(r, final_state, diag, gate, audit, outcome)
                 outcome_label = _outcome_label(final_state)
                 self.payment_status[r["payment_id"]] = {
                     "status": "resolved",
-                    "cause": diag.get("cause", "unknown"),
+                    "cause": cause,
                     "final_outcome": outcome_label,
                     "amount_recovered": audit.get("amount_recovered", 0.0),
                     "action_cost": audit.get("action_cost", 0.0),
-                    "action_node": audit.get("action_node", "unknown"),
+                    "tier": 1,
                 }
+                self._add_activity(r, audit.get("action_node", "unknown"), outcome_label,
+                                   audit.get("success", False),
+                                   audit.get("amount_recovered", 0.0),
+                                   audit.get("action_cost", 0.0))
                 continue
 
-            # Retryable payment — check gate mode
-            gate_mode = gate.get("mode", "auto_approve")
+            # Retryable: Tier 1/2 — auto-execute with merchant policy
+            counts["auto_executed"] += 1
             action = decision.get("action_type", "auto_retry")
 
-            if gate_mode == "require_approval":
-                counts["pending_approval"] += 1
-                self.pending_actions[r["payment_id"]] = {
-                    "payment_id": r["payment_id"],
-                    "customer_id": r["customer_id"],
-                    "amount": r["amount"],
-                    "payment_method": r["payment_method"],
-                    "payment_category": r["payment_category"],
-                    "bank_name": r["bank_name"],
-                    "failure_timestamp": r["failure_timestamp"],
-                    "cause": diag.get("cause", "unknown"),
-                    "confidence": diag.get("confidence", 0),
-                    "recommended_action": action,
-                    "original_action": gate.get("original_action", action),
-                    "compliance_notes": [
-                        v.get("details", "")
-                        for v in gate.get("compliance_violations", [])
-                    ],
-                    "attempt_number": 1,
-                    "is_retry": False,
-                    "created_at": datetime.now().isoformat(),
-                }
-                self.payment_status[r["payment_id"]] = {
-                    "status": "pending_approval",
-                    "cause": diag.get("cause", "unknown"),
-                    "final_outcome": None,
-                    "amount_recovered": 0.0,
-                    "action_cost": 0.0,
-                    "recommended_action": action,
-                }
-            else:
-                counts["auto_approved"] += 1
-                self._schedule_retry(r, diag, decision, gate)
+            # Apply merchant policy (Tier 2)
+            action, policy_reason = config.apply_policy(action, r["amount"])
 
-        # Phase 2: process auto-approved retry events
+            # DND check
+            if r["customer_id"] in dnd_set and action in ("sms_then_retry", "call_then_retry"):
+                action = "auto_retry"
+
+            self._schedule_retry(r, diag, action, gate, dnd_set)
+
+        # Phase 2: execute all auto-scheduled retry events
         self._run_retry_loop()
 
         self.logger.flush_to_json()
+
         return counts
 
-    def _schedule_retry(self, record, diag, decision, gate):
-        """Schedule a retryable payment's first attempt."""
+    def _create_business_decision(self, record, diag, final_state):
+        """Create a Tier 3 business decision for merchant review."""
+        pid = record["payment_id"]
+        cause = diag.get("cause", "unknown")
+        rec = TIER_3_RECOMMENDATIONS.get(cause, {
+            "type": "review",
+            "summary": f"Requires merchant review: {cause}",
+            "options": ["approve", "reject"],
+        })
+
+        amount = record["amount"]
+        category = record.get("payment_category", "")
+        suggested_downgrade = round(amount * 0.6, 0) if amount > 5000 else None
+
+        detail = rec["summary"]
+        if suggested_downgrade:
+            detail = (
+                f"Customer cancelled their ₹{amount:,.0f}/month {category} mandate. "
+                f"Recommend offering ₹{suggested_downgrade:,.0f}/month as an alternative, "
+                f"or initiating a recovery conversation to understand their reason."
+            )
+
+        self.business_decisions[pid] = {
+            "payment_id": pid,
+            "customer_id": record["customer_id"],
+            "amount": amount,
+            "payment_method": record["payment_method"],
+            "payment_category": category,
+            "bank_name": record["bank_name"],
+            "failure_timestamp": record["failure_timestamp"],
+            "cause": cause,
+            "recommendation_type": rec["type"],
+            "recommendation": detail,
+            "options": rec["options"],
+            "suggested_downgrade": suggested_downgrade,
+            "status": "pending",
+            "merchant_response": None,
+            "created_at": datetime.now().isoformat(),
+            "tier": 3,
+        }
+
+        self.payment_status[pid] = {
+            "status": "decision_pending",
+            "cause": cause,
+            "final_outcome": None,
+            "amount_recovered": 0.0,
+            "action_cost": 0.0,
+            "tier": 3,
+        }
+
+        self._log_non_retryable_placeholder(record, diag)
+
+    def _log_non_retryable_placeholder(self, record, diag):
+        """Log initial event for Tier 3 items (no summary yet — awaiting decision)."""
+        self.logger.log_event({
+            "payment_id": record["payment_id"],
+            "customer_id": record["customer_id"],
+            "event_type": "initial_processing",
+            "attempt_number": 0,
+            "sim_timestamp": record["failure_timestamp"],
+            "action_type": "awaiting_decision",
+            "bandit_recommended_action": None,
+            "actual_action": "awaiting_decision",
+            "downgrade_reason": None,
+            "gate_mode": "tier_3",
+            "gate_approved": True,
+            "compliance_notes": [],
+            "outcome_success": False,
+            "amount_recovered": 0.0,
+            "action_cost": 0.0,
+            "outcome_details": "Tier 3 business decision — awaiting merchant input",
+            "timing_context": None,
+            "tier": 3,
+        })
+
+    def _schedule_retry(self, record, diag, action, gate, dnd_set):
+        """Schedule a retryable payment's first attempt (Tier 1/2 auto-execute)."""
         cause = diag["cause"]
-        action = decision["action_type"]
         payment_method = record["payment_method"]
         failure_time = datetime.fromisoformat(record["failure_timestamp"])
 
@@ -242,6 +329,11 @@ class PipelineServer:
             if action == "call_then_retry":
                 from decision.constraints import clamp_call_to_rbi_hours
                 scheduled_time = clamp_call_to_rbi_hours(scheduled_time)
+
+        ct_result = self.constraint_tracker.apply_constraints(
+            action, record["customer_id"], scheduled_time, record["payment_id"]
+        )
+        action = ct_result["action"]
 
         self.event_queue.enqueue(
             event_type="retry_attempt",
@@ -269,8 +361,8 @@ class PipelineServer:
             "action_type": "scheduled",
             "bandit_recommended_action": action,
             "actual_action": action,
-            "downgrade_reason": None,
-            "gate_mode": gate.get("mode", "auto_approve"),
+            "downgrade_reason": ct_result.get("reason"),
+            "gate_mode": "auto_execute",
             "gate_approved": True,
             "compliance_notes": compliance_notes,
             "outcome_success": False,
@@ -278,6 +370,7 @@ class PipelineServer:
             "action_cost": 0.0,
             "outcome_details": f"retry scheduled at {scheduled_time.isoformat()}",
             "timing_context": None,
+            "tier": 1,
         })
 
         self.payment_status[record["payment_id"]] = {
@@ -286,6 +379,7 @@ class PipelineServer:
             "final_outcome": None,
             "amount_recovered": 0.0,
             "action_cost": 0.0,
+            "tier": 1,
         }
 
     def _run_retry_loop(self):
@@ -319,17 +413,19 @@ class PipelineServer:
             days_since = (scheduled_time - failure_time).total_seconds() / 86400
             payday_dist = scheduled_time.day - 1
 
+            actual_action = result.get("actual_action", payload["action_type"])
+
             self.logger.log_event({
                 "payment_id": pid,
                 "customer_id": r["customer_id"],
-                "event_type": "retry_attempt",
+                "event_type": "retry_attempt" if result["status"] != "escalated" else "escalation_after_exhaustion",
                 "attempt_number": result["attempt_number"],
                 "sim_timestamp": scheduled_time.isoformat(),
-                "action_type": payload["action_type"],
+                "action_type": actual_action,
                 "bandit_recommended_action": payload["action_type"],
-                "actual_action": payload["action_type"],
-                "downgrade_reason": None,
-                "gate_mode": "auto_approve",
+                "actual_action": actual_action,
+                "downgrade_reason": None if actual_action == payload["action_type"] else "constraint_downgrade",
+                "gate_mode": "auto_execute",
                 "gate_approved": True,
                 "compliance_notes": [],
                 "outcome_success": result["status"] == "recovered",
@@ -341,6 +437,7 @@ class PipelineServer:
                     "days_since_payday": payday_dist,
                     "time_of_day": scheduled_time.hour,
                 },
+                "tier": 1,
             })
 
             if result["status"] == "recovered":
@@ -351,7 +448,11 @@ class PipelineServer:
                     "final_outcome": "recovered",
                     "amount_recovered": r["amount"],
                     "action_cost": sum(a.get("cost", 0) for a in self.history[pid]),
+                    "tier": 1,
                 }
+                self._add_activity(r, actual_action, "recovered", True,
+                                   r["amount"], result["action_cost"],
+                                   sim_ts=scheduled_time.isoformat())
             elif result["status"] == "escalated":
                 self._log_retryable_summary(r, self.history[pid], "failed_exhausted", scheduled_time)
                 self.payment_status[pid] = {
@@ -360,217 +461,62 @@ class PipelineServer:
                     "final_outcome": "failed_exhausted",
                     "amount_recovered": 0.0,
                     "action_cost": sum(a.get("cost", 0) for a in self.history[pid]),
+                    "tier": 1,
                 }
+                self._add_activity(r, actual_action, "failed_exhausted", False,
+                                   0, result["action_cost"],
+                                   f"exhausted after {result['attempt_number']} attempts",
+                                   sim_ts=scheduled_time.isoformat())
+            else:
+                self._add_activity(r, actual_action, "retry_scheduled", False,
+                                   0, result["action_cost"],
+                                   f"attempt {result['attempt_number']} failed, next scheduled",
+                                   sim_ts=scheduled_time.isoformat())
 
-    def approve_action(self, payment_id: str) -> dict:
-        """Merchant approves a pending action — execute it now."""
-        if payment_id not in self.pending_actions:
-            return {"error": "not_found", "message": f"No pending action for {payment_id}"}
-
-        pending = self.pending_actions.pop(payment_id)
-        record = self.record_map[payment_id]
-        action = pending["recommended_action"]
-        cause = pending["cause"]
-        attempt_number = pending["attempt_number"]
-        payment_method = record["payment_method"]
-
-        retry_time = self.clock.now()
-        success = simulate_retry_outcome(cause, action, attempt_number, retry_time, self.rng)
-        cost = ACTION_COSTS.get(action, 0.0)
-
-        attempt_entry = {
-            "attempt": attempt_number,
-            "time": retry_time.isoformat(),
-            "action": action,
-            "cause": cause,
-            "outcome": "success" if success else "failure",
-            "cost": cost,
-            "recovered": record["amount"] if success else 0.0,
-        }
-
-        if payment_id not in self.history:
-            self.history[payment_id] = []
-        self.history[payment_id].append(attempt_entry)
-
-        self.logger.log_event({
-            "payment_id": payment_id,
+    def _add_activity(self, record, action, outcome, success, amount_recovered, cost,
+                      details=None, sim_ts=None):
+        """Add an entry to the activity feed."""
+        self.activity_feed.append({
+            "payment_id": record["payment_id"],
             "customer_id": record["customer_id"],
-            "event_type": "approved_retry",
-            "attempt_number": attempt_number,
-            "sim_timestamp": retry_time.isoformat(),
-            "action_type": action,
-            "bandit_recommended_action": action,
-            "actual_action": action,
-            "downgrade_reason": None,
-            "gate_mode": "require_approval",
-            "gate_approved": True,
-            "compliance_notes": [],
-            "outcome_success": success,
-            "amount_recovered": record["amount"] if success else 0.0,
-            "action_cost": cost,
-            "outcome_details": f"merchant-approved {action} — {'success' if success else 'failure'}",
-            "timing_context": None,
-        })
-
-        if success:
-            self._log_retryable_summary(record, self.history[payment_id], "recovered", retry_time)
-            self.payment_status[payment_id] = {
-                "status": "resolved",
-                "cause": cause,
-                "final_outcome": "recovered",
-                "amount_recovered": record["amount"],
-                "action_cost": sum(a.get("cost", 0) for a in self.history[payment_id]),
-            }
-            self.logger.flush_to_json()
-            return {
-                "payment_id": payment_id,
-                "outcome": "recovered",
-                "amount_recovered": record["amount"],
-                "action_cost": cost,
-                "attempt_number": attempt_number,
-                "next_pending": None,
-            }
-
-        # Failed — check if we can retry again
-        cap = max_attempts(cause)
-        if attempt_number >= cap:
-            self._log_retryable_summary(record, self.history[payment_id], "failed_exhausted", retry_time)
-            self.payment_status[payment_id] = {
-                "status": "resolved",
-                "cause": cause,
-                "final_outcome": "failed_exhausted",
-                "amount_recovered": 0.0,
-                "action_cost": sum(a.get("cost", 0) for a in self.history[payment_id]),
-            }
-            self.logger.flush_to_json()
-            return {
-                "payment_id": payment_id,
-                "outcome": "failed_exhausted",
-                "amount_recovered": 0.0,
-                "action_cost": cost,
-                "attempt_number": attempt_number,
-                "next_pending": None,
-            }
-
-        # Schedule next attempt as a new pending action
-        next_attempt = attempt_number + 1
-        failure_time = datetime.fromisoformat(record["failure_timestamp"])
-        payday_dist = retry_time.day - 1
-        days_since = (retry_time - failure_time).total_seconds() / 86400
-
-        bandit_context = {
-            "original_cause": cause,
-            "time_of_day": retry_time.hour,
-            "day_of_week": retry_time.weekday(),
-            "days_since_failure": days_since,
-            "days_since_estimated_payday": payday_dist,
             "amount": record["amount"],
-            "retry_attempt_number": next_attempt,
-            "pre_debit_notification_sent": record.get("pre_debit_notification_sent", True),
-        }
-        next_action = self.bandit.select_action(bandit_context)
-
-        from action.compliance import is_dnd
-        if is_dnd(record["customer_id"]) and next_action in ("sms_then_retry", "call_then_retry"):
-            next_action = "auto_retry"
-
-        needs_approval = next_action in ("sms_then_retry", "call_then_retry", "card_update_link")
-
-        if needs_approval:
-            self.pending_actions[payment_id] = {
-                "payment_id": payment_id,
-                "customer_id": record["customer_id"],
-                "amount": record["amount"],
-                "payment_method": record["payment_method"],
-                "payment_category": record["payment_category"],
-                "bank_name": record["bank_name"],
-                "failure_timestamp": record["failure_timestamp"],
-                "cause": cause,
-                "confidence": self.diagnosis_cache.get(payment_id, {}).get("confidence", 0),
-                "recommended_action": next_action,
-                "original_action": next_action,
-                "compliance_notes": [],
-                "attempt_number": next_attempt,
-                "is_retry": True,
-                "previous_attempts": self.history.get(payment_id, []),
-                "created_at": datetime.now().isoformat(),
-            }
-            self.payment_status[payment_id] = {
-                "status": "pending_approval",
-                "cause": cause,
-                "final_outcome": None,
-                "amount_recovered": 0.0,
-                "action_cost": sum(a.get("cost", 0) for a in self.history[payment_id]),
-                "recommended_action": next_action,
-            }
-            self.logger.flush_to_json()
-            return {
-                "payment_id": payment_id,
-                "outcome": "failed_retry_pending",
-                "amount_recovered": 0.0,
-                "action_cost": cost,
-                "attempt_number": attempt_number,
-                "next_pending": {
-                    "attempt_number": next_attempt,
-                    "recommended_action": next_action,
-                },
-            }
-        else:
-            # Auto-retry doesn't need approval — schedule it
-            delay_hours = 24.0
-            scheduled_time = retry_time + timedelta(hours=delay_hours)
-            self.event_queue.enqueue(
-                event_type="retry_attempt",
-                scheduled_time=scheduled_time,
-                payload={
-                    "payment_id": payment_id,
-                    "cause": cause,
-                    "action_type": next_action,
-                    "attempt_number": next_attempt,
-                    "action_cost": ACTION_COSTS.get(next_action, 0.0),
-                    "payment_method": payment_method,
-                },
-            )
-            self._run_retry_loop()
-            self.logger.flush_to_json()
-
-            status = self.payment_status.get(payment_id, {})
-            return {
-                "payment_id": payment_id,
-                "outcome": status.get("final_outcome", "in_progress"),
-                "amount_recovered": status.get("amount_recovered", 0.0),
-                "action_cost": cost,
-                "attempt_number": attempt_number,
-                "next_pending": None,
-            }
-
-    def reject_action(self, payment_id: str) -> dict:
-        """Merchant rejects a pending action."""
-        if payment_id not in self.pending_actions:
-            return {"error": "not_found", "message": f"No pending action for {payment_id}"}
-
-        pending = self.pending_actions.pop(payment_id)
-        record = self.record_map[payment_id]
-
-        self.logger.log_event({
-            "payment_id": payment_id,
-            "customer_id": record["customer_id"],
-            "event_type": "merchant_rejected",
-            "attempt_number": pending["attempt_number"],
-            "sim_timestamp": self.clock.now().isoformat(),
-            "action_type": "rejected",
-            "bandit_recommended_action": pending["recommended_action"],
-            "actual_action": "rejected",
-            "downgrade_reason": "merchant rejected",
-            "gate_mode": "require_approval",
-            "gate_approved": False,
-            "compliance_notes": [],
-            "outcome_success": False,
-            "amount_recovered": 0.0,
-            "action_cost": 0.0,
-            "outcome_details": "merchant rejected the recommended action",
-            "timing_context": None,
+            "action": action,
+            "outcome": outcome,
+            "success": success,
+            "amount_recovered": amount_recovered,
+            "cost": cost,
+            "details": details or "",
+            "sim_timestamp": sim_ts or record.get("failure_timestamp", ""),
+            "cause": self.diagnosis_cache.get(record["payment_id"], {}).get("cause", "unknown"),
         })
+
+    # ── Tier 3: Business Decisions ──
+
+    def get_decisions(self) -> list[dict]:
+        """Return pending business decisions (Tier 3 only)."""
+        decisions = [d for d in self.business_decisions.values() if d["status"] == "pending"]
+        decisions.sort(key=lambda d: d["amount"], reverse=True)
+        return decisions
+
+    def approve_decision(self, payment_id: str, response: str = "approve_conversation") -> dict:
+        """Merchant approves a Tier 3 business decision."""
+        if payment_id not in self.business_decisions:
+            return {"error": "not_found", "message": f"No business decision for {payment_id}"}
+
+        bd = self.business_decisions[payment_id]
+        if bd["status"] != "pending":
+            return {"error": "already_resolved", "message": f"Decision already {bd['status']}"}
+
+        bd["status"] = "approved"
+        bd["merchant_response"] = response
+
+        record = self.record_map[payment_id]
+        outcome = "escalated"
+
+        if response == "offer_downgrade" and bd.get("suggested_downgrade"):
+            outcome = "downgrade_offered"
+        elif response == "mark_churned":
+            outcome = "merchant_rejected"
 
         self.logger.log_summary({
             "payment_id": payment_id,
@@ -581,38 +527,71 @@ class PipelineServer:
             "bank_name": record["bank_name"],
             "failure_timestamp": record["failure_timestamp"],
             "failure_reason_code": record["failure_reason_code"],
-            "diagnosed_cause": pending["cause"],
-            "diagnosis_confidence": pending["confidence"],
-            "ground_truth_cause": record["ground_truth_cause"],
-            "is_retryable": True,
-            "total_attempts": pending["attempt_number"] - 1,
-            "final_outcome": "merchant_rejected",
+            "diagnosed_cause": bd["cause"],
+            "diagnosis_confidence": self.diagnosis_cache.get(payment_id, {}).get("confidence", 0),
+            "ground_truth_cause": record.get("ground_truth_cause", "unknown"),
+            "is_retryable": False,
+            "total_attempts": 0,
+            "final_outcome": outcome,
             "total_amount_recovered": 0.0,
-            "total_action_cost": sum(a.get("cost", 0) for a in self.history.get(payment_id, [])),
-            "net_recovered": -sum(a.get("cost", 0) for a in self.history.get(payment_id, [])),
+            "total_action_cost": 0.0,
+            "net_recovered": 0.0,
             "resolution_sim_timestamp": self.clock.now().isoformat(),
-            "attempt_history": self.history.get(payment_id, []),
+            "attempt_history": [],
+            "tier": 3,
+            "merchant_decision": response,
         })
 
         self.payment_status[payment_id] = {
             "status": "resolved",
-            "cause": pending["cause"],
-            "final_outcome": "merchant_rejected",
+            "cause": bd["cause"],
+            "final_outcome": outcome,
             "amount_recovered": 0.0,
-            "action_cost": sum(a.get("cost", 0) for a in self.history.get(payment_id, [])),
+            "action_cost": 0.0,
+            "tier": 3,
         }
 
-        self.logger.flush_to_json()
-        return {"payment_id": payment_id, "outcome": "rejected"}
+        self._add_activity(record, f"decision:{response}", outcome, False, 0, 0,
+                           f"merchant {response.replace('_', ' ')}")
 
-    def approve_all(self) -> list[dict]:
-        """Approve all pending actions. Returns list of results."""
-        results = []
-        pids = list(self.pending_actions.keys())
-        for pid in pids:
-            result = self.approve_action(pid)
-            results.append(result)
-        return results
+        self.logger.flush_to_json()
+        return {"payment_id": payment_id, "outcome": outcome, "response": response}
+
+    def reject_decision(self, payment_id: str) -> dict:
+        """Merchant rejects a Tier 3 business decision (mark as churned)."""
+        return self.approve_decision(payment_id, response="mark_churned")
+
+    # ── Legacy approve/reject for backwards compat ──
+
+    def approve_action(self, payment_id: str) -> dict:
+        if payment_id in self.business_decisions:
+            return self.approve_decision(payment_id)
+        return {"error": "not_found", "message": f"No pending action for {payment_id}"}
+
+    def reject_action(self, payment_id: str) -> dict:
+        if payment_id in self.business_decisions:
+            return self.reject_decision(payment_id)
+        return {"error": "not_found", "message": f"No pending action for {payment_id}"}
+
+    def get_pending(self) -> list[dict]:
+        """Legacy: return Tier 3 decisions as 'pending'."""
+        return self.get_decisions()
+
+    # ── Activity Feed ──
+
+    def get_activity(self, limit: int = 50) -> list[dict]:
+        """Return recent activity feed entries, newest first."""
+        return list(reversed(self.activity_feed[-limit:]))
+
+    # ── Config ──
+
+    def get_config(self) -> dict:
+        return self.merchant_config.get_all()
+
+    def update_config(self, updates: dict) -> dict:
+        return self.merchant_config.update(updates)
+
+    # ── Overview ──
 
     def get_overview(self) -> dict:
         """Compute live overview metrics from current state."""
@@ -624,20 +603,17 @@ class PipelineServer:
 
         total_at_risk = sum(r["amount"] for r in self.records)
 
-        resolved = [s for s in summaries]
-        total_recovered = sum(s.get("total_amount_recovered", 0) for s in resolved)
-        total_cost = sum(s.get("total_action_cost", 0) for s in resolved)
+        total_recovered = sum(s.get("total_amount_recovered", 0) for s in summaries)
+        total_cost = sum(s.get("total_action_cost", 0) for s in summaries)
         net_recovered = total_recovered - total_cost
 
-        # Action distribution from events + pending proposals
+        # Action distribution
         action_counts = Counter()
         for e in events:
-            at = e.get("action_type", e.get("actual_action", "unknown"))
+            at = e.get("actual_action", e.get("action_type", "unknown"))
             action_counts[at] += 1
-        for pa in self.pending_actions.values():
-            action_counts[pa.get("recommended_action", "unknown")] += 1
 
-        # Attempt distribution from summaries
+        # Attempt distribution
         attempt_dist = Counter()
         retryable_count = 0
         for s in summaries:
@@ -662,15 +638,15 @@ class PipelineServer:
         # Outcome distribution
         outcome_counts = Counter(s.get("final_outcome", "unknown") for s in summaries)
 
-        # Pending count
-        pending_count = len(self.pending_actions)
+        # Tier 3 pending count
+        decisions_pending = len([d for d in self.business_decisions.values() if d["status"] == "pending"])
 
-        # Cause distribution from ALL 500 diagnoses (not just executed)
+        # Cause distribution from ALL 500 diagnoses
         cause_dist = Counter(
             d.get("cause", "unknown") for d in self.diagnosis_cache.values()
         )
 
-        # Bank distribution with cause breakdown
+        # Bank distribution
         bank_stats = defaultdict(lambda: {"total": 0, "causes": Counter()})
         for s in summaries:
             bank = s.get("bank_name", "Unknown")
@@ -681,7 +657,7 @@ class PipelineServer:
             for bank, data in sorted(bank_stats.items(), key=lambda x: -x[1]["total"])
         ]
 
-        # Recovery timeline — cumulative by simulated day
+        # Recovery timeline
         daily_recovery = defaultdict(float)
         daily_cost = defaultdict(float)
         for e in events:
@@ -701,7 +677,7 @@ class PipelineServer:
                 "net": round(cumulative - cumulative_cost, 0),
             })
 
-        # Exception categories with amounts
+        # Exceptions
         exhausted = [s for s in summaries if s.get("final_outcome") == "failed_exhausted"]
         escalated = [s for s in summaries if s.get("final_outcome") == "escalated"]
         pending_nr = [s for s in summaries if s.get("final_outcome") in ("card_update_sent", "mandate_resequenced")]
@@ -714,21 +690,8 @@ class PipelineServer:
             "gate_blocked": {"count": len(blocked), "amount": round(sum(s["amount"] for s in blocked), 0)},
         }
 
-        # Projected recovery from pending actions using bandit success rates
-        from action.retry_processor import _load_success_rates
-        rates = _load_success_rates()
-        pending_amount = sum(pa["amount"] for pa in self.pending_actions.values())
-        projected_pending = 0.0
-        for pa in self.pending_actions.values():
-            cause = pa.get("cause", "unknown")
-            action = pa.get("recommended_action", "auto_retry")
-            attempt = pa.get("attempt_number", 1)
-            base_rate = rates.get((cause, action), 0.10)
-            decay = {1: 1.0, 2: 0.85, 3: 0.65}.get(attempt, 0.5)
-            projected_pending += pa["amount"] * base_rate * decay
-
-        projected_net = net_recovered + projected_pending
-        projected_rate = round(projected_net / total_at_risk, 4) if total_at_risk > 0 else 0
+        # Tier 3 pending amount
+        decisions_amount = sum(d["amount"] for d in self.business_decisions.values() if d["status"] == "pending")
 
         return {
             "total_payments": len(self.records),
@@ -737,11 +700,9 @@ class PipelineServer:
             "total_cost": round(total_cost, 2),
             "net_recovered": round(net_recovered, 2),
             "recovery_rate": round(net_recovered / total_at_risk, 4) if total_at_risk > 0 else 0,
-            "projected_net": round(projected_net, 2),
-            "projected_rate": projected_rate,
-            "pending_amount": round(pending_amount, 2),
             "resolved_count": len(summaries),
-            "pending_count": pending_count,
+            "decisions_pending": decisions_pending,
+            "decisions_amount": round(decisions_amount, 2),
             "action_distribution": dict(action_counts),
             "attempt_distribution": dict(attempt_dist),
             "outcome_distribution": dict(outcome_counts),
@@ -757,13 +718,11 @@ class PipelineServer:
             },
             "events_logged": len(events),
             "summaries_logged": len(summaries),
+            "auto_executed": sum(1 for ps in self.payment_status.values() if ps.get("tier") in (1, 2)),
+            "merchant_config": self.merchant_config.get_all(),
         }
 
-    def get_pending(self) -> list[dict]:
-        """Return pending actions sorted by amount descending."""
-        pending = list(self.pending_actions.values())
-        pending.sort(key=lambda p: p["amount"], reverse=True)
-        return pending
+    # ── Payments ──
 
     def get_payments(self, status_filter=None, cause_filter=None, method_filter=None) -> list[dict]:
         """Return all payments with their current status."""
@@ -790,6 +749,7 @@ class PipelineServer:
                 "action_cost": ps.get("action_cost", 0.0),
                 "net_recovered": ps.get("amount_recovered", 0.0) - ps.get("action_cost", 0.0),
                 "total_attempts": len(self.history.get(pid, [])),
+                "tier": ps.get("tier"),
             }
 
             if status_filter and entry["status"] != status_filter:
@@ -804,7 +764,7 @@ class PipelineServer:
         return result
 
     def get_payment_detail(self, payment_id: str) -> dict | None:
-        """Return detail view for a single payment including timeline."""
+        """Return detail view for a single payment."""
         if payment_id not in self.record_map:
             return None
 
@@ -813,7 +773,7 @@ class PipelineServer:
         diag = self.diagnosis_cache.get(payment_id, {})
         events = self.logger.get_payment_events(payment_id)
         summary = self.logger.get_payment_summary(payment_id)
-        pending = self.pending_actions.get(payment_id)
+        bd = self.business_decisions.get(payment_id)
 
         return {
             "payment": {
@@ -839,8 +799,11 @@ class PipelineServer:
             "attempt_history": self.history.get(payment_id, []),
             "events": events,
             "summary": summary,
-            "pending_action": pending,
+            "business_decision": bd,
+            "tier": ps.get("tier"),
         }
+
+    # ── Logging helpers ──
 
     def _log_gate_blocked(self, record, final_state, diag, gate, outcome):
         self.logger.log_event({
@@ -861,6 +824,7 @@ class PipelineServer:
             "action_cost": 0.0,
             "outcome_details": outcome.get("details", "gate blocked"),
             "timing_context": None,
+            "tier": 1,
         })
 
         self.logger.log_summary({
@@ -913,6 +877,7 @@ class PipelineServer:
             "action_cost": audit.get("action_cost", 0.0),
             "outcome_details": outcome.get("details", ""),
             "timing_context": None,
+            "tier": 1,
         })
 
         outcome_label = _outcome_label(final_state)
