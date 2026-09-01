@@ -577,6 +577,131 @@ class PipelineServer:
         """Legacy: return Tier 3 decisions as 'pending'."""
         return self.get_decisions()
 
+    # ── Single Payment Test ──
+
+    def process_single(self, record: dict) -> dict:
+        """Process a single test payment through the full pipeline."""
+        if not self.batch_run:
+            self.reset()
+            self.batch_run = True
+
+        pid = record["payment_id"]
+        self.records.append(record)
+        self.record_map[pid] = record
+
+        app = build_graph()
+        dnd_set = get_dnd_set()
+        config = self.merchant_config
+
+        initial_state = {
+            "payment_id": pid,
+            "customer_id": record["customer_id"],
+            "payment_method": record["payment_method"],
+            "amount": record["amount"],
+            "payment_record": record,
+        }
+
+        final_state = app.invoke(initial_state)
+
+        decision = final_state.get("decision", {})
+        gate = final_state.get("gate_result", {})
+        diag = final_state.get("diagnosis", {})
+        audit_entry = final_state.get("audit_entry", {})
+        outcome = final_state.get("action_outcome", {})
+
+        self.diagnosis_cache[pid] = diag
+        cause = diag.get("cause", "unknown")
+
+        steps = []
+        steps.append({
+            "phase": "diagnosis",
+            "detail": f"Diagnosed cause: {cause}",
+            "confidence": diag.get("confidence", 0),
+            "cause": cause,
+        })
+
+        if not gate.get("approved", True):
+            self.payment_status[pid] = {
+                "status": "gate_blocked",
+                "cause": cause,
+                "final_outcome": "gate_blocked",
+                "amount_recovered": 0.0,
+                "action_cost": 0.0,
+                "tier": 1,
+            }
+            self._add_activity(record, "gate_blocked", "gate_blocked", False, 0, 0,
+                               gate.get("reason", "compliance violation"))
+            steps.append({"phase": "gate", "detail": f"Blocked: {gate.get('reason', 'compliance')}", "approved": False})
+            return {"payment_id": pid, "cause": cause, "tier": 1, "outcome": "gate_blocked", "steps": steps}
+
+        steps.append({"phase": "gate", "detail": "Compliance gate passed", "approved": True})
+
+        is_retryable = decision.get("is_retryable", False)
+        action_type = decision.get("action_type", "auto_retry")
+
+        if not is_retryable:
+            if cause in TIER_3_CAUSES:
+                self._create_business_decision(record, diag, final_state)
+                steps.append({"phase": "decision", "detail": f"Tier 3 — business decision queued", "action": "awaiting_decision", "tier": 3})
+                return {"payment_id": pid, "cause": cause, "tier": 3, "outcome": "decision_pending", "steps": steps,
+                        "decision": self.business_decisions.get(pid)}
+
+            outcome_label = _outcome_label(final_state)
+            self.payment_status[pid] = {
+                "status": "resolved",
+                "cause": cause,
+                "final_outcome": outcome_label,
+                "amount_recovered": audit_entry.get("amount_recovered", 0.0),
+                "action_cost": audit_entry.get("action_cost", 0.0),
+                "tier": 1,
+            }
+            self._add_activity(record, audit_entry.get("action_node", "unknown"), outcome_label,
+                               audit_entry.get("success", False),
+                               audit_entry.get("amount_recovered", 0.0),
+                               audit_entry.get("action_cost", 0.0))
+            steps.append({"phase": "action", "detail": f"Non-retryable: {outcome_label}", "action": audit_entry.get("action_node", "unknown"), "tier": 1})
+            return {"payment_id": pid, "cause": cause, "tier": 1, "outcome": outcome_label, "steps": steps}
+
+        action_type, policy_reason = config.apply_policy(action_type, record["amount"])
+        if record["customer_id"] in dnd_set and action_type in ("sms_then_retry", "call_then_retry"):
+            action_type = "auto_retry"
+
+        steps.append({
+            "phase": "bandit",
+            "detail": f"Bandit chose: {action_type.replace('_', ' ')}",
+            "action": action_type,
+            "is_retryable": True,
+        })
+
+        self._schedule_retry(record, diag, action_type, gate, dnd_set)
+
+        saved_feed_len = len(self.activity_feed)
+        self._run_retry_loop()
+
+        retry_results = self.activity_feed[saved_feed_len:]
+        status = self.payment_status.get(pid, {})
+        final_outcome = status.get("final_outcome", "in_progress")
+
+        for r_act in retry_results:
+            steps.append({
+                "phase": "retry",
+                "detail": f"{r_act['action'].replace('_', ' ')} → {r_act['outcome']}",
+                "action": r_act["action"],
+                "outcome": r_act["outcome"],
+                "amount_recovered": r_act.get("amount_recovered", 0),
+            })
+
+        self.logger.flush_to_json()
+        return {
+            "payment_id": pid,
+            "cause": cause,
+            "tier": status.get("tier", 1),
+            "outcome": final_outcome,
+            "amount_recovered": status.get("amount_recovered", 0),
+            "action_cost": status.get("action_cost", 0),
+            "steps": steps,
+        }
+
     # ── Activity Feed ──
 
     def get_activity(self, limit: int = 50) -> list[dict]:

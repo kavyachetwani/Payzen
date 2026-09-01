@@ -63,12 +63,60 @@ class ChatMessage(BaseModel):
     message: str
 
 
+class TestPayment(BaseModel):
+    amount: float
+    payment_method: str
+    payment_category: str
+    bank_name: str
+    failure_reason_code: str
+    customer_prior_success_count: int = 5
+    customer_prior_failure_count: int = 0
+    amount_above_afa_threshold: bool = False
+    pre_debit_notification_sent: bool = True
+
+
 # ── Batch ──
 
 @app.post("/api/run-batch")
 def run_batch():
     counts = pipeline.run_batch()
     return counts
+
+
+# ── Test Single Payment ──
+
+@app.post("/api/test-payment")
+def test_payment(body: TestPayment):
+    import random, string
+    from datetime import datetime
+    suffix = ''.join(random.choices(string.digits, k=5))
+    pid = f"TEST_{suffix}"
+    cid = f"CUST_T{suffix}"
+    mid = f"MND_T{suffix}"
+    now = datetime.now().isoformat()
+    exp = "2027-06-30"
+
+    record = {
+        "payment_id": pid,
+        "customer_id": cid,
+        "mandate_id": mid,
+        "amount": body.amount,
+        "payment_category": body.payment_category,
+        "payment_method": body.payment_method,
+        "bank_name": body.bank_name,
+        "bin": "",
+        "failure_timestamp": now,
+        "failure_reason_code": body.failure_reason_code,
+        "customer_prior_success_count": body.customer_prior_success_count,
+        "customer_prior_failure_count": body.customer_prior_failure_count,
+        "mandate_expiry_date": exp,
+        "amount_above_afa_threshold": body.amount_above_afa_threshold,
+        "pre_debit_notification_sent": body.pre_debit_notification_sent,
+        "ground_truth_cause": "test_entry",
+    }
+
+    result = pipeline.process_single(record)
+    return result
 
 
 # ── Overview ──

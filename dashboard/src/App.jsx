@@ -85,32 +85,49 @@ function TierBadge({ tier }) {
 }
 
 function DonutChart({ data, size = 140 }) {
+  const [hover, setHover] = useState(null)
   const total = data.reduce((s, d) => s + d.value, 0)
   if (!total) return null
   const cx = size / 2, cy = size / 2, r = size * 0.38, stroke = size * 0.14
   const circumference = 2 * Math.PI * r
   let offset = 0
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {data.map((d, i) => {
-        const pct = d.value / total
-        const dash = pct * circumference
-        const gap = circumference - dash
-        const o = offset
-        offset += dash
-        return (
-          <circle key={i} cx={cx} cy={cy} r={r} fill="none"
-            stroke={d.fill} strokeWidth={stroke}
-            strokeDasharray={`${dash} ${gap}`}
-            strokeDashoffset={-o}
-            transform={`rotate(-90 ${cx} ${cy})`} />
-        )
-      })}
-    </svg>
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {data.map((d, i) => {
+          const p = d.value / total
+          const dash = p * circumference
+          const gap = circumference - dash
+          const o = offset
+          offset += dash
+          return (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={d.fill} strokeWidth={hover === i ? stroke + 4 : stroke}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={-o}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ cursor: 'pointer', transition: 'stroke-width 0.15s' }}
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)} />
+          )
+        })}
+        {hover !== null && (
+          <>
+            <text x={cx} y={cy - 6} textAnchor="middle" fill="#374151" fontSize="13" fontWeight="600">
+              {(data[hover].value / total * 100).toFixed(1)}%
+            </text>
+            <text x={cx} y={cy + 12} textAnchor="middle" fill="#6b7280" fontSize="10">
+              {data[hover].value} items
+            </text>
+          </>
+        )}
+      </svg>
+    </div>
   )
 }
 
 function SvgLineChart({ data, baseline }) {
+  const [hoverIdx, setHoverIdx] = useState(null)
   if (!data || data.length === 0) return <p className="text-gray-400 text-sm py-8 text-center">No timeline data</p>
   const W = 700, H = 220, pad = { t: 20, r: 60, b: 30, l: 60 }
   const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b
@@ -123,7 +140,8 @@ function SvgLineChart({ data, baseline }) {
   const points = data.map((d, i) => `${x(i)},${y(d.net || 0)}`).join(' ')
   const ticks = 5
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 260 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 260 }}
+      onMouseLeave={() => setHoverIdx(null)}>
       {Array.from({ length: ticks + 1 }, (_, i) => {
         const v = minV + (range / ticks) * i
         const yy = y(v)
@@ -137,25 +155,54 @@ function SvgLineChart({ data, baseline }) {
       {baseline && <><line x1={pad.l} x2={W - pad.r} y1={y(baseline)} y2={y(baseline)} stroke="#ef4444" strokeDasharray="8 4" strokeWidth={1.5} />
         <text x={W - pad.r + 4} y={y(baseline) + 4} fill="#ef4444" fontSize="10">Naive</text></>}
       <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinejoin="round" />
+      {data.map((d, i) => (
+        <circle key={i} cx={x(i)} cy={y(d.net || 0)} r={hoverIdx === i ? 5 : 3}
+          fill={hoverIdx === i ? '#16a34a' : 'transparent'} stroke={hoverIdx === i ? '#16a34a' : 'transparent'}
+          style={{ cursor: 'pointer' }}
+          onMouseEnter={() => setHoverIdx(i)} />
+      ))}
+      {hoverIdx !== null && (() => {
+        const d = data[hoverIdx]
+        const px = x(hoverIdx), py = y(d.net || 0)
+        const tipW = 120, tipH = 36
+        const tx = Math.min(Math.max(px - tipW / 2, pad.l), W - pad.r - tipW)
+        const ty = py - tipH - 8
+        return (
+          <g>
+            <line x1={px} x2={px} y1={pad.t} y2={H - pad.b} stroke="#d1d5db" strokeDasharray="3 3" />
+            <rect x={tx} y={ty} width={tipW} height={tipH} rx={6} fill="#1f2937" opacity={0.9} />
+            <text x={tx + tipW / 2} y={ty + 14} textAnchor="middle" fill="#fff" fontSize="10">{d.date}</text>
+            <text x={tx + tipW / 2} y={ty + 28} textAnchor="middle" fill="#4ade80" fontSize="11" fontWeight="600">{fmtFull(d.net || 0)}</text>
+          </g>
+        )
+      })()}
     </svg>
   )
 }
 
 function SvgHBarChart({ data }) {
+  const [hover, setHover] = useState(null)
   if (!data || data.length === 0) return <p className="text-gray-400 text-sm py-8 text-center">No bank data</p>
   const maxCount = Math.max(...data.map(d => d.count))
   return (
     <div className="space-y-2">
       {data.map((d, i) => (
-        <div key={i} className="flex items-center gap-3">
+        <div key={i} className="flex items-center gap-3 group cursor-pointer"
+          onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
           <span className="text-xs text-gray-600 w-28 text-right truncate">{d.name}</span>
-          <div className="flex-1 h-7 bg-gray-50 rounded overflow-hidden">
-            <div className="h-full rounded flex items-center px-2 transition-all" style={{
+          <div className="flex-1 h-7 bg-gray-50 rounded overflow-hidden relative">
+            <div className={`h-full rounded flex items-center px-2 transition-all duration-200 ${hover === i ? 'shadow-md' : ''}`} style={{
               width: `${Math.max(8, (d.count / maxCount) * 100)}%`,
               background: d.fill,
+              transform: hover === i ? 'scaleY(1.15)' : 'scaleY(1)',
             }}>
               <span className="text-white text-xs font-semibold">{d.count}</span>
             </div>
+            {hover === i && d.topCause && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 bg-white/90 px-1.5 py-0.5 rounded">
+                top cause: {d.topCause.replace(/_/g, ' ')}
+              </span>
+            )}
           </div>
         </div>
       ))}
@@ -613,13 +660,17 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
             <div className="flex items-center gap-4">
               <DonutChart data={causeData} />
               <div className="flex-1 space-y-1.5">
-                {[...causeData].sort((a, b) => b.value - a.value).map(d => (
-                  <div key={d.name} className="flex items-center gap-2 text-sm">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.fill }} />
-                    <span className="text-gray-600 flex-1">{d.name}</span>
-                    <span className="font-mono text-gray-800 font-medium">{d.value}</span>
-                  </div>
-                ))}
+                {[...causeData].sort((a, b) => b.value - a.value).map(d => {
+                  const total = causeData.reduce((s, c) => s + c.value, 0)
+                  return (
+                    <div key={d.name} className="flex items-center gap-2 text-sm group cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 py-0.5 transition">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform" style={{ background: d.fill }} />
+                      <span className="text-gray-600 flex-1">{d.name}</span>
+                      <span className="font-mono text-gray-800 font-medium">{d.value}</span>
+                      <span className="text-[10px] text-gray-400 w-10 text-right opacity-0 group-hover:opacity-100 transition-opacity">{(d.value / total * 100).toFixed(0)}%</span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -628,13 +679,17 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
             <div className="flex items-center gap-4">
               <DonutChart data={actionData} />
               <div className="flex-1 space-y-1.5">
-                {actionData.map(d => (
-                  <div key={d.name} className="flex items-center gap-2 text-sm">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.fill }} />
-                    <span className="text-gray-600 flex-1">{d.name}</span>
-                    <span className="font-mono text-gray-800 font-medium">{d.value}</span>
-                  </div>
-                ))}
+                {actionData.map(d => {
+                  const total = actionData.reduce((s, c) => s + c.value, 0)
+                  return (
+                    <div key={d.name} className="flex items-center gap-2 text-sm group cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 py-0.5 transition">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 group-hover:scale-125 transition-transform" style={{ background: d.fill }} />
+                      <span className="text-gray-600 flex-1">{d.name}</span>
+                      <span className="font-mono text-gray-800 font-medium">{d.value}</span>
+                      <span className="text-[10px] text-gray-400 w-10 text-right opacity-0 group-hover:opacity-100 transition-opacity">{(d.value / total * 100).toFixed(0)}%</span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -686,14 +741,20 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
           {funnelData.map((d, i) => {
             const maxVal = funnelData[0].value
             const width = Math.max(10, (d.value / maxVal) * 100)
+            const dropRate = i > 0 ? ((1 - d.value / funnelData[i - 1].value) * 100).toFixed(1) : null
             return (
-              <div key={i} className="flex items-center gap-3">
+              <div key={i} className="flex items-center gap-3 group cursor-pointer">
                 <span className="text-sm text-gray-500 w-40 text-right">{d.label}</span>
-                <div className="flex-1 h-8 bg-gray-50 rounded-lg overflow-hidden">
-                  <div className="h-full rounded-lg flex items-center px-3 transition-all duration-500"
-                    style={{ width: `${width}%`, background: d.color }}>
+                <div className="flex-1 h-8 bg-gray-50 rounded-lg overflow-hidden relative">
+                  <div className="h-full rounded-lg flex items-center px-3 transition-all duration-300 group-hover:shadow-md"
+                    style={{ width: `${width}%`, background: d.color, transform: 'scaleY(1)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scaleY(1.12)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scaleY(1)'}>
                     <span className="text-white text-sm font-semibold">{d.value}</span>
                   </div>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 px-1.5 py-0.5 rounded">
+                    {i === 0 ? `${((d.value / (o.retryable_count + (o.business_decisions_count || 0) + (o.gate_blocked || 0) + (o.non_retryable || 0))) * 100).toFixed(0)}% of total` : `${dropRate}% drop`}
+                  </span>
                 </div>
               </div>
             )
@@ -1495,6 +1556,189 @@ function ChatWidget({ paymentId, onClose, onChatComplete }) {
   )
 }
 
+// ─── TEST ENTRY ─────────────────────────────────────────────
+
+function TestEntry({ onResult }) {
+  const [form, setForm] = useState({
+    amount: 5000,
+    payment_method: 'upi_autopay',
+    payment_category: 'subscription',
+    bank_name: 'HDFC',
+    failure_reason_code: '04',
+    customer_prior_success_count: 5,
+    customer_prior_failure_count: 0,
+    amount_above_afa_threshold: false,
+    pre_debit_notification_sent: true,
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [result, setResult] = useState(null)
+  const [visibleSteps, setVisibleSteps] = useState(0)
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const submit = async () => {
+    setSubmitting(true)
+    setResult(null)
+    setVisibleSteps(0)
+    try {
+      const res = await fetch(`${API}/test-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      setResult(data)
+      if (data.steps) {
+        for (let i = 0; i < data.steps.length; i++) {
+          await new Promise(r => setTimeout(r, 600))
+          setVisibleSteps(i + 1)
+        }
+      }
+      if (onResult) onResult(data)
+    } catch (e) {
+      setResult({ error: e.message })
+    }
+    setSubmitting(false)
+  }
+
+  const fields = [
+    { key: 'amount', label: 'Amount (₹)', type: 'number' },
+    { key: 'payment_method', label: 'Payment Method', type: 'select', options: ['upi_autopay', 'enach', 'card_auto_debit'] },
+    { key: 'payment_category', label: 'Category', type: 'select', options: ['subscription', 'emi', 'sip', 'insurance', 'cc_bill'] },
+    { key: 'bank_name', label: 'Bank', type: 'select', options: ['HDFC', 'ICICI', 'SBI', 'Axis', 'Kotak', 'PNB', 'Yes Bank', 'IndusInd', 'Bank of Baroda', 'Bank of India', 'Canara', 'IDBI', 'Union Bank'] },
+    { key: 'failure_reason_code', label: 'Failure Reason Code', type: 'select', options: ['04', '14', '59', '61', 'afa_pending', 'card_expired', 'timeout', 'unknown'] },
+    { key: 'customer_prior_success_count', label: 'Prior Successes', type: 'number' },
+    { key: 'customer_prior_failure_count', label: 'Prior Failures', type: 'number' },
+    { key: 'amount_above_afa_threshold', label: 'Above AFA Threshold', type: 'toggle' },
+    { key: 'pre_debit_notification_sent', label: 'Pre-debit Notification Sent', type: 'toggle' },
+  ]
+
+  const stepIcon = (phase) => {
+    if (phase === 'diagnosis') return '🔍'
+    if (phase === 'gate') return '🛡️'
+    if (phase === 'bandit') return '🎰'
+    if (phase === 'decision') return '⚖️'
+    if (phase === 'action') return '⚡'
+    if (phase === 'retry') return '🔄'
+    return '→'
+  }
+
+  const outcomeColor = (outcome) => {
+    if (outcome === 'recovered') return 'text-emerald-600'
+    if (outcome === 'decision_pending') return 'text-amber-600'
+    if (outcome === 'gate_blocked') return 'text-red-600'
+    if (outcome === 'failed_exhausted') return 'text-red-500'
+    return 'text-gray-700'
+  }
+
+  return (
+    <div className="space-y-6 pb-12">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-1">Test a Payment</h3>
+        <p className="text-sm text-gray-400 mb-5">Enter a payment scenario to see how the AI recovery pipeline processes it end-to-end</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {fields.map(f => (
+            <div key={f.key}>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{f.label}</label>
+              {f.type === 'select' ? (
+                <select value={form[f.key]} onChange={e => set(f.key, e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none">
+                  {f.options.map(o => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
+                </select>
+              ) : f.type === 'number' ? (
+                <input type="number" value={form[f.key]} onChange={e => set(f.key, Number(e.target.value))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-mono" />
+              ) : f.type === 'toggle' ? (
+                <button onClick={() => set(f.key, !form[f.key])}
+                  className={`w-12 h-6 rounded-full transition-colors ${form[f.key] ? 'bg-blue-500' : 'bg-gray-300'} relative`}>
+                  <span className={`block w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-transform ${form[f.key] ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+
+        <button onClick={submit} disabled={submitting}
+          className="mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          {submitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Processing...
+            </>
+          ) : 'Run Through Pipeline'}
+        </button>
+      </div>
+
+      {result && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 animate-card-enter">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700">Pipeline Result</h3>
+              <p className="text-sm font-mono text-gray-400">{result.payment_id}</p>
+            </div>
+            <div className="text-right">
+              <p className={`text-lg font-bold ${outcomeColor(result.outcome)}`}>
+                {result.outcome?.replace(/_/g, ' ')}
+              </p>
+              <p className="text-xs text-gray-400">Tier {result.tier}</p>
+            </div>
+          </div>
+
+          {result.amount_recovered > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4 text-center">
+              <p className="text-sm text-emerald-500">Amount Recovered</p>
+              <p className="text-2xl font-bold text-emerald-600">{fmtFull(result.amount_recovered)}</p>
+            </div>
+          )}
+
+          {result.steps && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pipeline Steps</p>
+              {result.steps.map((s, i) => (
+                <div key={i} className={`flex items-start gap-3 py-2 px-3 rounded-lg border transition-all duration-300
+                  ${i < visibleSteps ? 'opacity-100 translate-y-0 border-gray-100 bg-gray-50' : 'opacity-0 translate-y-2 border-transparent'}`}
+                  style={{ transitionDelay: `${i * 50}ms` }}>
+                  <span className="text-lg flex-shrink-0 mt-0.5">{stepIcon(s.phase)}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-400 uppercase">{s.phase}</p>
+                    <p className="text-sm text-gray-700">{s.detail}</p>
+                    {s.confidence != null && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${s.confidence * 100}%` }} />
+                        </div>
+                        <span className="text-[10px] text-gray-400">{(s.confidence * 100).toFixed(0)}% confidence</span>
+                      </div>
+                    )}
+                    {s.amount_recovered > 0 && (
+                      <span className="text-xs text-emerald-600 font-semibold">+{fmtFull(s.amount_recovered)}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {result.decision && (
+            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs font-semibold text-amber-500 uppercase mb-1">Business Decision Queued</p>
+              <p className="text-sm text-amber-700">{result.decision.recommendation}</p>
+              <p className="text-xs text-amber-400 mt-1">Go to the Decisions tab to review and act on this</p>
+            </div>
+          )}
+
+          {result.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-600">{result.error}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function App() {
   const [tab, setTab] = useState('overview')
   const [overview, setOverview] = useState(null)
@@ -1695,6 +1939,7 @@ function App() {
     { id: 'decisions', label: 'Decisions', count: decisions.length },
     { id: 'payments', label: 'Payments' },
     { id: 'activity', label: 'Activity' },
+    { id: 'test', label: 'Test Entry' },
     { id: 'settings', label: 'Settings' },
   ]
 
@@ -1752,6 +1997,8 @@ function App() {
           <PaymentsTable payments={payments} onSelect={selectPayment} initialOutcomeFilter={outcomeFilter} />
         ) : tab === 'activity' ? (
           <ActivityFeed activity={activity} onSelectPayment={selectPayment} />
+        ) : tab === 'test' ? (
+          <TestEntry onResult={() => refresh()} />
         ) : tab === 'settings' ? (
           <SettingsPanel config={config} onSave={saveConfig} saving={saving} />
         ) : null}
