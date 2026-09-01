@@ -80,7 +80,10 @@ class ConversationState:
         if any(w in text for w in ["haan kar do", "bhej do link", "set kar do", "wapas kar do",
                                     "ready hoon", "agree", "set up karo", "kar leta hoon",
                                     "haan chalega", "abhi kar", "ok done", "ok theek hai",
-                                    "try karta", "try karti", "chance de"]):
+                                    "try karta", "try karti", "chance de",
+                                    "yes", "haan", "ha ji", "haanji", "yes please",
+                                    "chahiye", "bilkul", "zaroor", "sure",
+                                    "kar do", "karo", "proceed", "go ahead"]):
             self.outcome = "promise_to_pay"
             return self.outcome
 

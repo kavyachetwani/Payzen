@@ -189,15 +189,24 @@ function ToastContainer({ toasts, onDismiss }) {
 
 // ─── ANIMATED COUNTER HOOK ──────────────────────────────────
 
-function useAnimatedValue(target, duration = 800) {
-  const [value, setValue] = useState(0)
-  const prevTarget = useRef(0)
+function useAnimatedValue(target, duration = 800, prevStored) {
+  const initFrom = prevStored != null && prevStored > 0 ? prevStored : 0
+  const [value, setValue] = useState(initFrom)
+  const prevTarget = useRef(initFrom)
+  const [delta, setDelta] = useState(0)
+  const [showDelta, setShowDelta] = useState(false)
 
   useEffect(() => {
     if (target == null || isNaN(target)) return
     const start = prevTarget.current
     const diff = target - start
-    if (diff === 0) { setValue(target); return }
+    if (Math.abs(diff) < 1) { setValue(target); prevTarget.current = target; return }
+    if (start > 0 && diff > 0) {
+      setDelta(diff)
+      setShowDelta(true)
+      const hideTimer = setTimeout(() => setShowDelta(false), 3500)
+      var cleanup = () => clearTimeout(hideTimer)
+    }
     const startTime = performance.now()
     let raf
     const step = (now) => {
@@ -209,63 +218,180 @@ function useAnimatedValue(target, duration = 800) {
       else prevTarget.current = target
     }
     raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
+    return () => { cancelAnimationFrame(raf); cleanup?.() }
   }, [target, duration])
 
-  return value
+  return { value, delta, showDelta }
+}
+
+function DeltaBadge({ delta, showDelta, formatter }) {
+  if (!showDelta || delta <= 0) return null
+  return (
+    <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 animate-delta-badge">
+      +{formatter ? formatter(delta) : delta}
+    </span>
+  )
 }
 
 // ─── BATCH ACTIVITY OVERLAY ─────────────────────────────────
 
-function BatchActivityOverlay({ items, visible }) {
-  const [shown, setShown] = useState([])
-  const containerRef = useRef(null)
+function BatchActivityOverlay({ processing, items, overview, onDismiss }) {
+  const [phase, setPhase] = useState(0)
+  const [diagLines, setDiagLines] = useState([])
+  const [actionLines, setActionLines] = useState([])
+  const [retryFeed, setRetryFeed] = useState([])
+  const [retryProgress, setRetryProgress] = useState(0)
+  const [done, setDone] = useState(false)
+  const feedRef = useRef(null)
 
   useEffect(() => {
-    if (!visible || !items || items.length === 0) { setShown([]); return }
-    setShown([])
-    const timers = items.slice(0, 30).map((item, i) =>
-      setTimeout(() => setShown(prev => [...prev, item]), i * 80)
+    if (!processing) { setPhase(0); setDiagLines([]); setActionLines([]); setRetryFeed([]); setRetryProgress(0); setDone(false); return }
+    setPhase(1); setDiagLines([]); setActionLines([]); setRetryFeed([]); setRetryProgress(0); setDone(false)
+    return () => {}
+  }, [processing])
+
+  useEffect(() => {
+    if (!processing || !items || items.length === 0) return
+    const causes = {}
+    const actions = {}
+    items.forEach(i => {
+      if (i.cause) causes[i.cause] = (causes[i.cause] || 0) + 1
+      if (i.action) actions[i.action] = (actions[i.action] || 0) + 1
+    })
+
+    const causeEntries = Object.entries(causes).sort((a, b) => b[1] - a[1])
+    const actionEntries = Object.entries(actions).sort((a, b) => b[1] - a[1])
+    const retryItems = items.filter(i => i.outcome)
+    const totalRetries = overview?.retryable_count || retryItems.length || 299
+
+    setPhase(1)
+    const diagTimers = causeEntries.map(([cause, count], i) =>
+      setTimeout(() => setDiagLines(prev => [...prev, { cause, count }]), 300 + i * 250)
     )
-    return () => timers.forEach(clearTimeout)
-  }, [items, visible])
+
+    const actionStart = 300 + causeEntries.length * 250 + 500
+    const actionTimers = actionEntries.map(([action, count], i) =>
+      setTimeout(() => setActionLines(prev => [...prev, { action, count }]), actionStart + i * 200)
+    )
+
+    const phase2Start = actionStart + actionEntries.length * 200 + 800
+    const phase2Timer = setTimeout(() => setPhase(2), phase2Start)
+
+    const feedItems = retryItems.slice(0, 40)
+    const feedTimers = feedItems.map((item, i) =>
+      setTimeout(() => {
+        setRetryFeed(prev => [...prev, item])
+        setRetryProgress(Math.round(((i + 1) / feedItems.length) * totalRetries))
+      }, phase2Start + 400 + i * 200)
+    )
+
+    const doneTime = phase2Start + 400 + feedItems.length * 200 + 1000
+    const doneTimer = setTimeout(() => { setPhase(3); setDone(true) }, doneTime)
+    const dismissTimer = setTimeout(() => { if (onDismiss) onDismiss() }, doneTime + 5000)
+
+    return () => {
+      diagTimers.forEach(clearTimeout)
+      actionTimers.forEach(clearTimeout)
+      feedTimers.forEach(clearTimeout)
+      clearTimeout(phase2Timer)
+      clearTimeout(doneTimer)
+      clearTimeout(dismissTimer)
+    }
+  }, [items, processing, overview, onDismiss])
 
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight
-    }
-  }, [shown])
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight
+  }, [retryFeed])
 
-  if (!visible || shown.length === 0) return null
+  if (!processing) return null
+
+  const totalRetries = overview?.retryable_count || 299
+  const recovered = (items || []).filter(i => i.amount_recovered > 0)
+  const totalRecovered = recovered.reduce((s, i) => s + (i.amount_recovered || 0), 0)
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 mt-4">
-      <h4 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        Live Processing Feed
-      </h4>
-      <div ref={containerRef} className="space-y-1 max-h-64 overflow-y-auto text-xs">
-        {shown.map((item, i) => (
-          <div key={i} className="flex items-center gap-2 py-1 px-2 rounded animate-feed-in"
-            style={{ animationDelay: '0ms' }}>
-            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-              item.outcome === 'recovered' ? 'bg-emerald-500' :
-              item.outcome === 'failed_exhausted' ? 'bg-red-400' :
-              'bg-gray-400'}`} />
-            <span className="font-mono text-gray-500 w-20 truncate">{item.payment_id}</span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-              item.action === 'auto_retry' ? 'bg-emerald-100 text-emerald-700' :
-              item.action?.startsWith('sms') ? 'bg-blue-100 text-blue-700' :
-              item.action?.startsWith('call') ? 'bg-purple-100 text-purple-700' :
-              item.action?.startsWith('decision:') ? 'bg-amber-100 text-amber-700' :
-              'bg-gray-100 text-gray-700'}`}>
-              {item.action?.replace(/_/g, ' ')}
-            </span>
-            {item.amount_recovered > 0 && (
-              <span className="text-emerald-600 font-mono font-medium ml-auto">+{fmtFull(item.amount_recovered)}</span>
-            )}
+    <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center animate-toast-in">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg mx-4 overflow-hidden" style={{ maxHeight: '85vh' }}>
+        <div className={`${done ? 'bg-emerald-600' : 'bg-blue-600'} text-white px-5 py-4 flex items-center justify-between transition-colors duration-500`}>
+          <div className="flex items-center gap-3">
+            {!done && <span className="w-3 h-3 rounded-full bg-white/40 animate-pulse" />}
+            {done && <span className="text-lg">✓</span>}
+            <h3 className="font-semibold">
+              {phase <= 1 ? 'Diagnosing Failures...' : phase === 2 ? 'Executing Retries...' : 'Recovery Complete'}
+            </h3>
           </div>
-        ))}
+          {done && <button onClick={onDismiss} className="text-white/70 hover:text-white text-sm">Dismiss</button>}
+        </div>
+
+        <div className="p-5 space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 64px)' }}>
+          {/* Phase 1: Diagnosis lines */}
+          {diagLines.length > 0 && (
+            <div className="space-y-1">
+              {diagLines.map((d, i) => (
+                <div key={i} className="text-sm text-gray-700 animate-feed-in flex items-center gap-2">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span className="font-mono">{d.count}</span>
+                  <span className="text-gray-500">{d.cause.replace(/_/g, ' ')} diagnosed</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {actionLines.length > 0 && (
+            <div className="space-y-1 border-t border-gray-100 pt-2">
+              {actionLines.map((a, i) => (
+                <div key={i} className="text-sm text-gray-700 animate-feed-in flex items-center gap-2">
+                  <span className="text-blue-500 font-bold">✓</span>
+                  <span className="font-mono">{a.count}</span>
+                  <span className="text-gray-500">{a.action.replace(/_/g, ' ')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Phase 2: Retry progress + feed */}
+          {phase >= 2 && (
+            <div className="border-t border-gray-100 pt-3">
+              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                <span>Executing retries... {done ? totalRetries : retryProgress}/{totalRetries}</span>
+                <span className="text-emerald-600 font-semibold">
+                  +{fmtFull(retryFeed.filter(r => r.amount_recovered > 0).reduce((s, r) => s + r.amount_recovered, 0))}
+                </span>
+              </div>
+              <div className="bg-gray-100 rounded-full h-2.5 overflow-hidden mb-3">
+                <div className={`h-full rounded-full transition-all duration-300 ${done ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                  style={{ width: `${done ? 100 : Math.min((retryProgress / totalRetries) * 100, 95)}%` }} />
+              </div>
+              <div ref={feedRef} className="space-y-0.5 max-h-48 overflow-y-auto">
+                {retryFeed.map((item, i) => {
+                  const success = item.amount_recovered > 0
+                  return (
+                    <div key={i} className="flex items-center gap-2 py-0.5 px-1 text-xs animate-feed-in">
+                      <span className="font-mono text-gray-500 w-20 truncate">{item.payment_id}</span>
+                      <span className="text-gray-400">{fmtFull(item.amount)}</span>
+                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-500">{item.action?.replace(/_/g, ' ')}</span>
+                      <span className="text-gray-400">→</span>
+                      {success
+                        ? <span className="text-emerald-600 font-semibold">Success! ✓</span>
+                        : <span className="text-red-400">Failed</span>}
+                      {success && <span className="text-emerald-600 font-mono ml-auto">+{fmtFull(item.amount_recovered)}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Phase 3: Summary */}
+          {done && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center animate-card-enter">
+              <p className="text-3xl font-bold text-emerald-600">{fmtFull(totalRecovered)}</p>
+              <p className="text-sm text-emerald-500 mt-1">recovered from {items?.length || 0} events</p>
+              <p className="text-xs text-gray-400 mt-1">{recovered.length} successful recoveries</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -304,20 +430,31 @@ styleTag.textContent = `
   }
   .animate-count { animation: count-fade 0.6s ease-out; }
 
+  @keyframes delta-badge {
+    0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+    20% { opacity: 1; transform: translateY(-2px) scale(1.05); }
+    40% { transform: translateY(0) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-4px); }
+  }
+  .animate-delta-badge { animation: delta-badge 3s ease-out forwards; }
+
   @keyframes card-exit {
     0% { opacity: 1; transform: translateX(0); max-height: 300px; margin-bottom: 12px; }
-    50% { opacity: 0; transform: translateX(60px); max-height: 300px; margin-bottom: 12px; }
+    65% { opacity: 1; transform: translateX(0); max-height: 300px; margin-bottom: 12px; }
+    85% { opacity: 0; transform: translateX(60px); max-height: 300px; margin-bottom: 12px; }
     100% { opacity: 0; transform: translateX(60px); max-height: 0; margin-bottom: 0; padding: 0; overflow: hidden; }
   }
-  .animate-card-exit { animation: card-exit 0.5s ease-in-out forwards; pointer-events: none; }
-  .animate-card-exit-success { animation: card-exit 0.5s ease-in-out forwards; pointer-events: none; }
+  .animate-card-exit { animation: card-exit 2.3s ease-in-out forwards; pointer-events: none; }
+  .animate-card-exit-success { animation: card-exit 2.3s ease-in-out forwards; pointer-events: none; }
   .animate-card-exit-success::before {
-    content: ''; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.08); border-radius: inherit; z-index: 1;
+    content: ''; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.12); border-radius: inherit; z-index: 1;
   }
-  .animate-card-exit-reject { animation: card-exit 0.5s ease-in-out forwards; pointer-events: none; }
+  .animate-card-exit-reject { animation: card-exit 2.3s ease-in-out forwards; pointer-events: none; }
   .animate-card-exit-reject::before {
-    content: ''; position: absolute; inset: 0; background: rgba(239, 68, 68, 0.08); border-radius: inherit; z-index: 1;
+    content: ''; position: absolute; inset: 0; background: rgba(239, 68, 68, 0.12); border-radius: inherit; z-index: 1;
   }
+  .card-chatting { opacity: 0.55; border-color: #a5b4fc !important; transition: opacity 0.3s, border-color 0.3s; }
 `
 if (!document.getElementById('stage-11-5-styles')) {
   styleTag.id = 'stage-11-5-styles'
@@ -326,11 +463,12 @@ if (!document.getElementById('stage-11-5-styles')) {
 
 // ─── OVERVIEW PAGE ───────────────────────────────────────────
 
-function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBatchActivity }) {
-  const animNetRecovered = useAnimatedValue(overview?.net_recovered || 0)
-  const animRecoveryRate = useAnimatedValue(overview?.recovery_rate || 0, 1000)
-  const animRoi = useAnimatedValue(overview?.total_cost > 0 ? Math.round((overview?.net_recovered || 0) / overview.total_cost) : 0)
-  const animAtRisk = useAnimatedValue(overview?.total_at_risk || 0)
+function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecisions, recentBatchActivity, recentActivity }) {
+  const prev = prevOverview || {}
+  const { value: animNetRecovered, delta: deltaNet, showDelta: showDeltaNet } = useAnimatedValue(overview?.net_recovered || 0, 800, prev.net_recovered)
+  const { value: animRecoveryRate } = useAnimatedValue(overview?.recovery_rate || 0, 1000, prev.recovery_rate)
+  const { value: animRoi, delta: deltaRoi, showDelta: showDeltaRoi } = useAnimatedValue(overview?.total_cost > 0 ? Math.round((overview?.net_recovered || 0) / overview.total_cost) : 0, 800, prev.roi)
+  const { value: animAtRisk } = useAnimatedValue(overview?.total_at_risk || 0, 800, prev.total_at_risk)
 
   if (!overview || overview.error) {
     return (
@@ -386,7 +524,10 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBa
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center animate-card-enter">
             <p className="text-sm text-emerald-500 font-medium mb-1">Net Recovered</p>
-            <p className="text-4xl font-bold text-emerald-600 animate-count">{fmt(Math.round(animNetRecovered))}</p>
+            <p className="text-4xl font-bold text-emerald-600 animate-count">
+              {fmt(Math.round(animNetRecovered))}
+              <DeltaBadge delta={deltaNet} showDelta={showDeltaNet} formatter={fmt} />
+            </p>
             <p className="text-sm text-emerald-400 mt-1">from {fmtFull(o.total_at_risk)} at risk</p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center animate-card-enter" style={{ animationDelay: '100ms' }}>
@@ -405,7 +546,10 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBa
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 text-center animate-card-enter" style={{ animationDelay: '200ms' }}>
             <p className="text-sm text-purple-500 font-medium mb-1">ROI</p>
-            <p className="text-4xl font-bold text-purple-600 animate-count">{Math.round(animRoi).toLocaleString()}x</p>
+            <p className="text-4xl font-bold text-purple-600 animate-count">
+              {Math.round(animRoi).toLocaleString()}x
+              <DeltaBadge delta={deltaRoi} showDelta={showDeltaRoi} formatter={(v) => `${Math.round(v)}x`} />
+            </p>
             <p className="text-sm text-purple-400 mt-1">{fmtFull(o.total_cost)} spent → {fmt(o.net_recovered)}</p>
           </div>
         </div>
@@ -587,15 +731,51 @@ function OverviewPage({ overview, onNavigateTable, onNavigateDecisions, recentBa
         </div>
       </section>
 
-      {/* Batch Activity Overlay */}
-      <BatchActivityOverlay items={recentBatchActivity} visible={recentBatchActivity && recentBatchActivity.length > 0} />
+      {/* Recent Activity Feed */}
+      {recentActivity && recentActivity.length > 0 && (
+        <section className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="text-lg font-semibold text-gray-700 mb-1">Recent Activity</h3>
+          <p className="text-sm text-gray-400 mb-3">Last {Math.min(recentActivity.length, 25)} pipeline events</p>
+          <div className="space-y-1.5 max-h-80 overflow-y-auto">
+            {recentActivity.slice(0, 25).map((a, i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition text-sm animate-feed-in"
+                style={{ animationDelay: `${i * 30}ms` }}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  a.outcome === 'recovered' ? 'bg-emerald-500' :
+                  a.outcome === 'failed_exhausted' ? 'bg-red-400' :
+                  a.outcome === 'escalated' ? 'bg-orange-400' :
+                  a.outcome === 'card_update_sent' ? 'bg-blue-400' :
+                  a.outcome === 'mandate_resequenced' ? 'bg-cyan-400' :
+                  a.outcome === 'merchant_rejected' ? 'bg-red-300' :
+                  a.outcome === 'downgrade_offered' ? 'bg-amber-400' :
+                  'bg-gray-300'}`} />
+                <span className="font-mono text-xs text-gray-500 w-24 truncate">{a.payment_id}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  a.action === 'auto_retry' ? 'bg-emerald-100 text-emerald-700' :
+                  a.action?.startsWith('sms') ? 'bg-blue-100 text-blue-700' :
+                  a.action?.startsWith('call') ? 'bg-purple-100 text-purple-700' :
+                  a.action?.startsWith('decision:') ? 'bg-amber-100 text-amber-700' :
+                  'bg-gray-100 text-gray-700'}`}>
+                  {a.action?.replace(/_/g, ' ')}
+                </span>
+                <OutcomeBadge outcome={a.outcome} />
+                {a.amount_recovered > 0 && (
+                  <span className="text-emerald-600 font-mono text-xs font-medium ml-auto">+{fmtFull(a.amount_recovered)}</span>
+                )}
+                <span className="text-gray-400 text-[10px] font-mono ml-auto">{a.sim_timestamp?.slice(5, 16)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
     </div>
   )
 }
 
 // ─── DECISIONS (TIER 3) ─────────────────────────────────────
 
-function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, onChat, dismissingIds }) {
+function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, onChat, dismissingIds, chattingPaymentId }) {
   if (!decisions || decisions.length === 0) {
     return (
       <div className="text-center py-32">
@@ -627,14 +807,20 @@ function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, o
       <div className="space-y-3">
         {decisions.map((d, idx) => {
           const dismissState = dismissingIds?.[d.payment_id]
+          const isChatting = chattingPaymentId === d.payment_id
           const exitClass = dismissState === 'success' ? 'animate-card-exit-success' :
                             dismissState === 'reject' ? 'animate-card-exit-reject' :
                             dismissState ? 'animate-card-exit' : ''
           return (
             <div key={d.payment_id}
               className={`relative bg-white border border-gray-200 rounded-xl p-5 hover:shadow-sm transition
-                ${exitClass || 'animate-card-enter'}`}
+                ${exitClass || 'animate-card-enter'} ${isChatting && !exitClass ? 'card-chatting' : ''}`}
               style={!exitClass ? { animationDelay: `${idx * 60}ms` } : undefined}>
+              {isChatting && !exitClass && (
+                <span className="absolute top-3 right-3 z-10 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full animate-pulse">
+                  Chat in progress...
+                </span>
+              )}
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <button onClick={() => onSelect(d.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-sm font-medium">
@@ -655,9 +841,9 @@ function DecisionsQueue({ decisions, onApprove, onReject, onSelect, approving, o
               </div>
 
               <div className="flex gap-2">
-                <button onClick={() => { onApprove(d.payment_id, 'approve_conversation'); if (onChat) onChat(d.payment_id) }} disabled={approving || !!dismissState}
+                <button onClick={() => { if (onChat) onChat(d.payment_id) }} disabled={approving || !!dismissState || isChatting}
                   className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition">
-                  Start Recovery Chat
+                  {isChatting ? 'Chat Active' : 'Start Recovery Chat'}
                 </button>
                 {d.suggested_downgrade && (
                   <button onClick={() => onApprove(d.payment_id, 'offer_downgrade')} disabled={approving || !!dismissState}
@@ -1301,7 +1487,9 @@ function App() {
   const [chatPaymentId, setChatPaymentId] = useState(null)
   const [toasts, setToasts] = useState([])
   const [batchActivity, setBatchActivity] = useState([])
+  const [batchProcessing, setBatchProcessing] = useState(false)
   const [dismissingIds, setDismissingIds] = useState({})
+  const prevOverviewRef = useRef({})
   const toastId = useRef(0)
 
   const addToast = useCallback((message, type = 'info') => {
@@ -1323,7 +1511,17 @@ function App() {
         fetch(`${API}/activity`).then(r => r.json()),
         fetch(`${API}/config`).then(r => r.json()),
       ])
-      setOverview(ov)
+      setOverview(prev => {
+        if (prev) {
+          prevOverviewRef.current = {
+            net_recovered: prev.net_recovered || 0,
+            recovery_rate: prev.recovery_rate || 0,
+            roi: prev.total_cost > 0 ? Math.round(prev.net_recovered / prev.total_cost) : 0,
+            total_at_risk: prev.total_at_risk || 0,
+          }
+        }
+        return ov
+      })
       setDecisions(dec)
       setPayments(pay)
       setActivity(act)
@@ -1338,19 +1536,18 @@ function App() {
 
   const runBatch = async () => {
     setLoading(true); setError(null); setBatchActivity([])
-    addToast('Processing batch...', 'info')
+    setBatchProcessing(true)
     try {
       const res = await fetch(`${API}/run-batch`, { method: 'POST' })
       const data = await res.json()
       setLastAction(`${data.auto_executed} auto-executed, ${data.business_decisions} decisions, ${data.gate_blocked} blocked`)
-      addToast(`Recovery complete: ${data.auto_executed} auto-executed`, 'success')
       await refresh()
       const actRes = await fetch(`${API}/activity?limit=30`).then(r => r.json())
       setBatchActivity(actRes || [])
-      setTimeout(() => setBatchActivity([]), 12000)
     } catch {
       setError('Failed — is the backend running?')
       addToast('Batch processing failed', 'error')
+      setBatchProcessing(false)
     }
     setLoading(false)
   }
@@ -1384,7 +1581,7 @@ function App() {
       setLastAction(`${pid}: marked churned`)
       addToast(`${pid}: marked churned`, 'warning')
       setDismissingIds(prev => ({ ...prev, [pid]: 'reject' }))
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise(r => setTimeout(r, 2500))
       setDismissingIds(prev => { const n = { ...prev }; delete n[pid]; return n })
       await refresh()
       if (detail?.payment?.payment_id === pid) {
@@ -1426,14 +1623,26 @@ function App() {
     setTab('payments')
   }
 
-  const handleChatComplete = useCallback((pid, outcome) => {
+  const handleChatComplete = useCallback(async (pid, outcome) => {
     const exitType = (outcome === 'promise_to_pay' || outcome === 'interested_in_downgrade') ? 'success' : 'reject'
+    const backendResponse = outcome === 'promise_to_pay' ? 'approve_conversation'
+      : outcome === 'interested_in_downgrade' ? 'offer_downgrade'
+      : outcome === 'refused' ? 'mark_churned'
+      : 'approve_conversation'
+    try {
+      await fetch(`${API}/decisions/${pid}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: backendResponse }),
+      })
+    } catch {}
     setDismissingIds(prev => ({ ...prev, [pid]: exitType }))
+    addToast(`${pid}: ${outcome?.replace(/_/g, ' ')}`, exitType === 'success' ? 'success' : 'warning')
     setTimeout(() => {
       setDismissingIds(prev => { const n = { ...prev }; delete n[pid]; return n })
       refresh()
-    }, 500)
-  }, [refresh])
+    }, 2500)
+  }, [refresh, addToast])
 
   const handleTabSwitch = useCallback((id) => {
     setTab(id)
@@ -1497,9 +1706,9 @@ function App() {
         {tab === 'detail' && detail ? (
           <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} />
         ) : tab === 'overview' ? (
-          <OverviewPage overview={overview} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} />
+          <OverviewPage overview={overview} prevOverview={prevOverviewRef.current} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} recentActivity={activity} />
         ) : tab === 'decisions' ? (
-          <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} dismissingIds={dismissingIds} />
+          <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} dismissingIds={dismissingIds} chattingPaymentId={chatPaymentId} />
         ) : tab === 'payments' ? (
           <PaymentsTable payments={payments} onSelect={selectPayment} initialOutcomeFilter={outcomeFilter} />
         ) : tab === 'activity' ? (
@@ -1509,6 +1718,8 @@ function App() {
         ) : null}
       </div>
 
+      <BatchActivityOverlay processing={batchProcessing} items={batchActivity} overview={overview}
+        onDismiss={() => { setBatchProcessing(false); setBatchActivity([]); addToast('Recovery batch complete', 'success') }} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} onChatComplete={handleChatComplete} />
     </div>
