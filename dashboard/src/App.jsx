@@ -235,7 +235,7 @@ function DeltaBadge({ delta, showDelta, formatter }) {
 
 // ─── BATCH ACTIVITY OVERLAY ─────────────────────────────────
 
-function BatchActivityOverlay({ processing, items, overview, onDismiss }) {
+function BatchActivityOverlay({ processing, items, overview, onDismiss, onSelectPayment }) {
   const [phase, setPhase] = useState(0)
   const [diagLines, setDiagLines] = useState([])
   const [actionLines, setActionLines] = useState([])
@@ -367,7 +367,7 @@ function BatchActivityOverlay({ processing, items, overview, onDismiss }) {
                   const success = item.amount_recovered > 0
                   return (
                     <div key={i} className="flex items-center gap-2 py-0.5 px-1 text-xs animate-feed-in">
-                      <span className="font-mono text-gray-500 w-20 truncate">{item.payment_id}</span>
+                      <button onClick={() => onSelectPayment && onSelectPayment(item.payment_id)} className="font-mono text-blue-600 hover:text-blue-800 w-20 truncate text-left">{item.payment_id}</button>
                       <span className="text-gray-400">{fmtFull(item.amount)}</span>
                       <span className="text-gray-400">—</span>
                       <span className="text-gray-500">{item.action?.replace(/_/g, ' ')}</span>
@@ -463,7 +463,7 @@ if (!document.getElementById('stage-11-5-styles')) {
 
 // ─── OVERVIEW PAGE ───────────────────────────────────────────
 
-function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecisions, recentBatchActivity, recentActivity }) {
+function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecisions, recentBatchActivity, recentActivity, sessionStats, onSelectPayment }) {
   const prev = prevOverview || {}
   const { value: animNetRecovered, delta: deltaNet, showDelta: showDeltaNet } = useAnimatedValue(overview?.net_recovered || 0, 800, prev.net_recovered)
   const { value: animRecoveryRate } = useAnimatedValue(overview?.recovery_rate || 0, 1000, prev.recovery_rate)
@@ -519,7 +519,26 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
         <p className="text-red-400 text-sm">{o.total_payments} failed payments this cycle</p>
       </section>
 
-      {/* Recovery Results — immediately visible, no scrolling */}
+      {/* Session Activity Card */}
+      {sessionStats && sessionStats.resolved > 0 && (
+        <section className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 animate-card-enter">
+          <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">This Session</p>
+          <div className="space-y-1">
+            <p className="text-sm text-indigo-700 font-medium">✓ {sessionStats.resolved} decision{sessionStats.resolved !== 1 ? 's' : ''} resolved</p>
+            {sessionStats.recovered > 0 && (
+              <p className="text-sm text-emerald-700 font-medium">✓ {fmtFull(sessionStats.recovered)} recovered from conversations</p>
+            )}
+            {sessionStats.churned > 0 && (
+              <p className="text-sm text-red-600 font-medium">✗ {sessionStats.churned} customer{sessionStats.churned !== 1 ? 's' : ''} churned — {fmtFull(sessionStats.writtenOff)} written off</p>
+            )}
+            {(sessionStats.initialDecisions != null && sessionStats.initialDecisions - sessionStats.resolved > 0) && (
+              <p className="text-sm text-amber-600 font-medium">⏳ {sessionStats.initialDecisions - sessionStats.resolved} decision{(sessionStats.initialDecisions - sessionStats.resolved) !== 1 ? 's' : ''} remaining</p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Recovery Results — live numbers */}
       <section>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center animate-card-enter">
@@ -528,7 +547,9 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
               {fmt(Math.round(animNetRecovered))}
               <DeltaBadge delta={deltaNet} showDelta={showDeltaNet} formatter={fmt} />
             </p>
-            <p className="text-sm text-emerald-400 mt-1">from {fmtFull(o.total_at_risk)} at risk</p>
+            <p className="text-sm text-emerald-400 mt-1">
+              still at risk: {fmtFull(Math.max(0, (o.total_at_risk || 0) - (o.net_recovered || 0)))}
+            </p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center animate-card-enter" style={{ animationDelay: '100ms' }}>
             <p className="text-sm text-blue-500 font-medium mb-1">Recovery Rate</p>
@@ -749,7 +770,7 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
                   a.outcome === 'merchant_rejected' ? 'bg-red-300' :
                   a.outcome === 'downgrade_offered' ? 'bg-amber-400' :
                   'bg-gray-300'}`} />
-                <span className="font-mono text-xs text-gray-500 w-24 truncate">{a.payment_id}</span>
+                <button onClick={() => onSelectPayment && onSelectPayment(a.payment_id)} className="font-mono text-xs text-blue-600 hover:text-blue-800 w-24 truncate text-left">{a.payment_id}</button>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                   a.action === 'auto_retry' ? 'bg-emerald-100 text-emerald-700' :
                   a.action?.startsWith('sms') ? 'bg-blue-100 text-blue-700' :
@@ -978,7 +999,7 @@ function SettingsPanel({ config, onSave, saving }) {
 
 // ─── ACTIVITY FEED ──────────────────────────────────────────
 
-function ActivityFeed({ activity }) {
+function ActivityFeed({ activity, onSelectPayment }) {
   if (!activity || activity.length === 0) {
     return (
       <div className="text-center py-32">
@@ -993,23 +1014,27 @@ function ActivityFeed({ activity }) {
     <div className="space-y-2 pb-12">
       <p className="text-sm text-gray-400 mb-4">Recent pipeline activity — newest first</p>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-[14px]">
           <thead>
             <tr className="bg-gray-50 text-left text-gray-500 border-b border-gray-200">
-              <th className="px-4 py-3 font-medium">Payment</th>
-              <th className="px-4 py-3 font-medium">Action</th>
-              <th className="px-4 py-3 font-medium">Outcome</th>
-              <th className="px-4 py-3 font-medium">Amount</th>
-              <th className="px-4 py-3 font-medium">Recovered</th>
-              <th className="px-4 py-3 font-medium">Cause</th>
-              <th className="px-4 py-3 font-medium">Time</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Payment</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Action</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Outcome</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Amount</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Recovered</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Cause</th>
+              <th className="px-4 py-3.5 font-semibold text-[13px]">Time</th>
             </tr>
           </thead>
           <tbody>
             {activity.slice(0, 100).map((a, i) => (
               <tr key={i} className="border-b border-gray-100 hover:bg-blue-50/30 transition">
-                <td className="px-4 py-2.5 font-mono text-xs text-gray-700">{a.payment_id}</td>
-                <td className="px-4 py-2.5">
+                <td className="px-4 py-3.5">
+                  <button onClick={() => onSelectPayment && onSelectPayment(a.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-[13px] font-medium">
+                    {a.payment_id}
+                  </button>
+                </td>
+                <td className="px-4 py-3.5">
                   <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium
                     ${a.action === 'auto_retry' ? 'bg-emerald-100 text-emerald-700' :
                       a.action?.startsWith('sms') ? 'bg-blue-100 text-blue-700' :
@@ -1019,15 +1044,15 @@ function ActivityFeed({ activity }) {
                     {a.action?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-4 py-2.5"><OutcomeBadge outcome={a.outcome} /></td>
-                <td className="px-4 py-2.5 font-mono text-gray-700">{fmtFull(a.amount)}</td>
-                <td className="px-4 py-2.5 font-mono">
+                <td className="px-4 py-3.5"><OutcomeBadge outcome={a.outcome} /></td>
+                <td className="px-4 py-3.5 font-mono text-gray-700">{fmtFull(a.amount)}</td>
+                <td className="px-4 py-3.5 font-mono">
                   {a.amount_recovered > 0
                     ? <span className="text-emerald-600">+{fmtFull(a.amount_recovered)}</span>
                     : <span className="text-gray-400">₹0</span>}
                 </td>
-                <td className="px-4 py-2.5 text-xs text-gray-500">{a.cause?.replace(/_/g, ' ')}</td>
-                <td className="px-4 py-2.5 text-xs text-gray-400 font-mono">{a.sim_timestamp?.slice(0, 16)}</td>
+                <td className="px-4 py-3.5 text-[13px] text-gray-500">{a.cause?.replace(/_/g, ' ')}</td>
+                <td className="px-4 py-3.5 text-[13px] text-gray-400 font-mono">{a.sim_timestamp?.slice(0, 16)}</td>
               </tr>
             ))}
           </tbody>
@@ -1100,7 +1125,7 @@ function PaymentsTable({ payments, onSelect, initialOutcomeFilter }) {
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="bg-gray-50 text-left text-gray-500 border-b border-gray-200">
                 {[
@@ -1113,7 +1138,7 @@ function PaymentsTable({ payments, onSelect, initialOutcomeFilter }) {
                   ['net_recovered', 'Net'],
                   ['total_attempts', '#'],
                 ].map(([key, label]) => (
-                  <th key={key} className="px-4 py-3 font-medium cursor-pointer hover:text-gray-700" onClick={() => toggleSort(key)}>
+                  <th key={key} className="px-4 py-3.5 font-semibold text-[13px] cursor-pointer hover:text-gray-700" onClick={() => toggleSort(key)}>
                     {label} {sortBy === key ? (sortDir === 'desc' ? '↓' : '↑') : ''}
                   </th>
                 ))}
@@ -1122,24 +1147,24 @@ function PaymentsTable({ payments, onSelect, initialOutcomeFilter }) {
             <tbody>
               {sorted.slice(0, 100).map(p => (
                 <tr key={p.payment_id} className="border-b border-gray-100 hover:bg-blue-50/30 transition">
-                  <td className="px-4 py-2.5">
-                    <button onClick={() => onSelect(p.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-xs">
+                  <td className="px-4 py-3.5">
+                    <button onClick={() => onSelect(p.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-[13px] font-medium">
                       {p.payment_id}
                     </button>
                   </td>
-                  <td className="px-4 py-2.5 font-mono font-medium text-gray-800">{fmtFull(p.amount)}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-600">{p.diagnosed_cause?.replace(/_/g, ' ')}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500">{p.payment_method?.replace(/_/g, ' ')}</td>
-                  <td className="px-4 py-2.5"><StatusBadge status={p.status} /></td>
-                  <td className="px-4 py-2.5"><OutcomeBadge outcome={p.final_outcome} /></td>
-                  <td className="px-4 py-2.5 font-mono text-xs font-medium">
+                  <td className="px-4 py-3.5 font-mono font-medium text-gray-800">{fmtFull(p.amount)}</td>
+                  <td className="px-4 py-3.5 text-[13px] text-gray-600">{p.diagnosed_cause?.replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-3.5 text-[13px] text-gray-500">{p.payment_method?.replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-3.5"><StatusBadge status={p.status} /></td>
+                  <td className="px-4 py-3.5"><OutcomeBadge outcome={p.final_outcome} /></td>
+                  <td className="px-4 py-3.5 font-mono text-[13px] font-medium">
                     {p.net_recovered > 0
                       ? <span className="text-emerald-600">+{fmtFull(p.net_recovered)}</span>
                       : p.net_recovered < 0
                       ? <span className="text-red-500">{fmtFull(p.net_recovered)}</span>
                       : <span className="text-gray-400">₹0</span>}
                   </td>
-                  <td className="px-4 py-2.5 text-center text-gray-500">{p.total_attempts}</td>
+                  <td className="px-4 py-3.5 text-center text-gray-500">{p.total_attempts}</td>
                 </tr>
               ))}
             </tbody>
@@ -1489,6 +1514,7 @@ function App() {
   const [batchActivity, setBatchActivity] = useState([])
   const [batchProcessing, setBatchProcessing] = useState(false)
   const [dismissingIds, setDismissingIds] = useState({})
+  const [sessionStats, setSessionStats] = useState({ resolved: 0, recovered: 0, writtenOff: 0, churned: 0, initialDecisions: null })
   const prevOverviewRef = useRef({})
   const toastId = useRef(0)
 
@@ -1541,6 +1567,7 @@ function App() {
       const res = await fetch(`${API}/run-batch`, { method: 'POST' })
       const data = await res.json()
       setLastAction(`${data.auto_executed} auto-executed, ${data.business_decisions} decisions, ${data.gate_blocked} blocked`)
+      setSessionStats({ resolved: 0, recovered: 0, writtenOff: 0, churned: 0, initialDecisions: data.business_decisions })
       await refresh()
       const actRes = await fetch(`${API}/activity?limit=30`).then(r => r.json())
       setBatchActivity(actRes || [])
@@ -1554,6 +1581,7 @@ function App() {
 
   const approveDecision = async (pid, response = 'approve_conversation') => {
     setApproving(true)
+    const decisionAmount = decisions.find(d => d.payment_id === pid)?.amount || 0
     try {
       const data = await fetch(`${API}/decisions/${pid}/approve`, {
         method: 'POST',
@@ -1562,6 +1590,9 @@ function App() {
       }).then(r => r.json())
       setLastAction(`${pid}: ${data.outcome?.replace(/_/g, ' ')}`)
       addToast(`${pid}: ${data.outcome?.replace(/_/g, ' ')}`, 'success')
+      if (response === 'offer_downgrade') {
+        setSessionStats(s => ({ ...s, resolved: s.resolved + 1, recovered: s.recovered + decisionAmount }))
+      }
       await refresh()
       if (detail?.payment?.payment_id === pid) {
         const d = await fetch(`${API}/payments/${pid}`).then(r => r.json())
@@ -1576,10 +1607,12 @@ function App() {
 
   const rejectDecision = async (pid) => {
     setApproving(true)
+    const decisionAmount = decisions.find(d => d.payment_id === pid)?.amount || 0
     try {
       await fetch(`${API}/decisions/${pid}/reject`, { method: 'POST' })
       setLastAction(`${pid}: marked churned`)
       addToast(`${pid}: marked churned`, 'warning')
+      setSessionStats(s => ({ ...s, resolved: s.resolved + 1, churned: s.churned + 1, writtenOff: s.writtenOff + decisionAmount }))
       setDismissingIds(prev => ({ ...prev, [pid]: 'reject' }))
       await new Promise(r => setTimeout(r, 2500))
       setDismissingIds(prev => { const n = { ...prev }; delete n[pid]; return n })
@@ -1629,6 +1662,7 @@ function App() {
       : outcome === 'interested_in_downgrade' ? 'offer_downgrade'
       : outcome === 'refused' ? 'mark_churned'
       : 'approve_conversation'
+    const decisionAmount = decisions.find(d => d.payment_id === pid)?.amount || 0
     try {
       await fetch(`${API}/decisions/${pid}/approve`, {
         method: 'POST',
@@ -1636,13 +1670,18 @@ function App() {
         body: JSON.stringify({ response: backendResponse }),
       })
     } catch {}
+    if (exitType === 'success') {
+      setSessionStats(s => ({ ...s, resolved: s.resolved + 1, recovered: s.recovered + decisionAmount }))
+    } else {
+      setSessionStats(s => ({ ...s, resolved: s.resolved + 1, churned: s.churned + 1, writtenOff: s.writtenOff + decisionAmount }))
+    }
     setDismissingIds(prev => ({ ...prev, [pid]: exitType }))
     addToast(`${pid}: ${outcome?.replace(/_/g, ' ')}`, exitType === 'success' ? 'success' : 'warning')
     setTimeout(() => {
       setDismissingIds(prev => { const n = { ...prev }; delete n[pid]; return n })
       refresh()
     }, 2500)
-  }, [refresh, addToast])
+  }, [refresh, addToast, decisions])
 
   const handleTabSwitch = useCallback((id) => {
     setTab(id)
@@ -1706,20 +1745,21 @@ function App() {
         {tab === 'detail' && detail ? (
           <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} />
         ) : tab === 'overview' ? (
-          <OverviewPage overview={overview} prevOverview={prevOverviewRef.current} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} recentActivity={activity} />
+          <OverviewPage overview={overview} prevOverview={prevOverviewRef.current} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} recentActivity={activity} sessionStats={sessionStats} onSelectPayment={selectPayment} />
         ) : tab === 'decisions' ? (
           <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} dismissingIds={dismissingIds} chattingPaymentId={chatPaymentId} />
         ) : tab === 'payments' ? (
           <PaymentsTable payments={payments} onSelect={selectPayment} initialOutcomeFilter={outcomeFilter} />
         ) : tab === 'activity' ? (
-          <ActivityFeed activity={activity} />
+          <ActivityFeed activity={activity} onSelectPayment={selectPayment} />
         ) : tab === 'settings' ? (
           <SettingsPanel config={config} onSave={saveConfig} saving={saving} />
         ) : null}
       </div>
 
       <BatchActivityOverlay processing={batchProcessing} items={batchActivity} overview={overview}
-        onDismiss={() => { setBatchProcessing(false); setBatchActivity([]); addToast('Recovery batch complete', 'success') }} />
+        onDismiss={() => { setBatchProcessing(false); setBatchActivity([]); addToast('Recovery batch complete', 'success') }}
+        onSelectPayment={selectPayment} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} onChatComplete={handleChatComplete} />
     </div>
