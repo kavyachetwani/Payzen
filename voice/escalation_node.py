@@ -76,7 +76,7 @@ def run_escalation(payment_id: str = "PAY_TEST", use_model: bool = True,
                    scenario: str = "too_expensive", amount: float = 15000,
                    personality: str = "hesitant", seed: int = 42) -> dict:
     """Run a full escalation conversation with the customer simulator."""
-    agent = EscalationAgent(brand_name="Demo Store", use_llm=use_model)
+    agent = EscalationAgent(brand_name="Customer Demo Store", use_llm=use_model)
     simulator = CustomerSimulator(scenario, personality, amount, seed)
 
     result = agent.start_conversation(

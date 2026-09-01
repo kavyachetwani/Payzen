@@ -13,7 +13,7 @@ DEFAULTS = {
     "call_min_amount": 2000,
     "sms_template": "Your {service} payment of ₹{amount} could not be processed. Tap to retry: {link}",
     "call_tone": "empathetic",
-    "brand_name": "Demo Store",
+    "brand_name": "Customer Demo Store",
     "auto_escalate": False,
     "max_discount_percent": 0,
 }

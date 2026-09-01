@@ -522,7 +522,6 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
       <div className="text-center py-32">
         <div className="text-6xl mb-4">📊</div>
         <h2 className="text-xl font-semibold text-gray-700 mb-2">No recovery data yet</h2>
-        <p className="text-gray-400">Click "Run Recovery" to process 500 failed payments</p>
       </div>
     )
   }
@@ -1173,7 +1172,7 @@ function PaymentsTable({ payments, onSelect, initialOutcomeFilter }) {
           <select key={f.key} value={filter[f.key]}
             onChange={e => setFilter(prev => ({ ...prev, [f.key]: e.target.value }))}
             className="bg-white border border-gray-200 text-sm rounded-lg px-3 py-1.5 text-gray-600 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none">
-            <option value="">All {f.label.toLowerCase()}s</option>
+            <option value="">All {f.label.toLowerCase().endsWith('s') ? f.label.toLowerCase() + 'es' : f.label.toLowerCase() + 's'}</option>
             {f.options.map(o => <option key={o} value={o}>{o?.replace(/_/g, ' ')}</option>)}
           </select>
         ))}
@@ -1739,6 +1738,80 @@ function TestEntry({ onResult }) {
   )
 }
 
+function SetupForm({ config, onSave, saving, onSkip }) {
+  const [form, setForm] = useState(config || {})
+  useEffect(() => { if (config) setForm(config) }, [config])
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const Toggle = ({ label, desc, field }) => (
+    <div className="flex items-center justify-between py-2">
+      <div>
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+        <p className="text-xs text-gray-400">{desc}</p>
+      </div>
+      <button onClick={() => set(field, !form[field])}
+        className={`relative w-11 h-6 rounded-full transition ${form[field] ? 'bg-blue-500' : 'bg-gray-300'}`}>
+        <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form[field] ? 'left-[22px]' : 'left-0.5'}`} />
+      </button>
+    </div>
+  )
+
+  return (
+    <div className="space-y-4">
+      <Toggle label="SMS Notifications" desc="Send retry-link SMS to customers" field="sms_enabled" />
+      <Toggle label="Phone Calls" desc="Enable automated recovery calls" field="calls_enabled" />
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-gray-700">Min Amount for Calls</label>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="text-gray-400 text-sm">₹</span>
+            <input type="number" value={form.call_min_amount || 0}
+              onChange={e => set('call_min_amount', parseInt(e.target.value) || 0)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-700">Call Tone</label>
+          <select value={form.call_tone || 'empathetic'}
+            onChange={e => set('call_tone', e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-full mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none">
+            <option value="empathetic">Empathetic</option>
+            <option value="professional">Professional</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-gray-700">Brand Name</label>
+        <input type="text" value={form.brand_name || ''}
+          onChange={e => set('brand_name', e.target.value)}
+          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-full mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-gray-700">Max Discount %</label>
+        <p className="text-xs text-gray-400">Maximum discount for downgrade offers</p>
+        <input type="number" value={form.max_discount_percent || 40} min={0} max={100}
+          onChange={e => set('max_discount_percent', parseInt(e.target.value) || 0)}
+          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-24 mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
+      </div>
+
+      <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+        <button onClick={() => onSave(form)} disabled={saving}
+          className="flex-1 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition">
+          {saving ? 'Saving...' : 'Save & Continue'}
+        </button>
+        <button onClick={onSkip}
+          className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition">
+          Use Defaults
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [tab, setTab] = useState('overview')
   const [overview, setOverview] = useState(null)
@@ -1759,6 +1832,7 @@ function App() {
   const [batchProcessing, setBatchProcessing] = useState(false)
   const [dismissingIds, setDismissingIds] = useState({})
   const [sessionStats, setSessionStats] = useState({ resolved: 0, recovered: 0, writtenOff: 0, churned: 0, initialDecisions: null })
+  const [showSetup, setShowSetup] = useState(true)
   const prevOverviewRef = useRef({})
   const toastId = useRef(0)
 
@@ -1946,14 +2020,12 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm font-bold">R</span>
-            </div>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <img src="/logo.png" alt="Payzen" className="h-14 w-14 object-contain" />
             <div>
-              <h1 className="text-base font-semibold text-gray-800">{config?.brand_name || 'Demo Store'}</h1>
-              <p className="text-xs text-gray-400">AI Revenue Recovery</p>
+              <h1 className="text-xl font-bold text-gray-800">Payzen</h1>
+              <p className="text-sm text-gray-400">{config?.brand_name || 'Customer Demo Store'}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -2009,6 +2081,22 @@ function App() {
         onSelectPayment={selectPayment} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} onChatComplete={handleChatComplete} />
+
+      {showSetup && config && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4 animate-card-enter">
+            <div className="px-6 pt-6 pb-2">
+              <h2 className="text-xl font-bold text-gray-800">Welcome to AI Revenue Recovery</h2>
+              <p className="text-sm text-gray-400 mt-1">Review your merchant policy before getting started. You can change these anytime in Settings.</p>
+            </div>
+            <div className="px-6 py-4">
+              <SetupForm config={config} onSave={(form) => {
+                saveConfig(form).then(() => setShowSetup(false))
+              }} saving={saving} onSkip={() => setShowSetup(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
