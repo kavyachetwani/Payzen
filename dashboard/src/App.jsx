@@ -371,6 +371,15 @@ function BatchActivityOverlay({ processing, items, overview, onDismiss, onSelect
         </div>
 
         <div className="p-5 space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 64px)' }}>
+          {/* Indeterminate progress while backend is working */}
+          {phase === 1 && diagLines.length === 0 && (
+            <div className="space-y-3">
+              <div className="bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full animate-indeterminate" />
+              </div>
+              <p className="text-xs text-gray-400 text-center">Processing 500 payment failures through the diagnostic pipeline...</p>
+            </div>
+          )}
           {/* Phase 1: Diagnosis lines */}
           {diagLines.length > 0 && (
             <div className="space-y-1">
@@ -502,6 +511,13 @@ styleTag.textContent = `
     content: ''; position: absolute; inset: 0; background: rgba(239, 68, 68, 0.12); border-radius: inherit; z-index: 1;
   }
   .card-chatting { opacity: 0.55; border-color: #a5b4fc !important; transition: opacity 0.3s, border-color 0.3s; }
+
+  @keyframes indeterminate {
+    0% { width: 0%; margin-left: 0%; }
+    50% { width: 40%; margin-left: 30%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+  .animate-indeterminate { animation: indeterminate 1.5s ease-in-out infinite; }
 `
 if (!document.getElementById('stage-11-5-styles')) {
   styleTag.id = 'stage-11-5-styles'
@@ -1946,7 +1962,7 @@ function App() {
         fetch(`${API}/overview`).then(r => r.json()),
         fetch(`${API}/decisions`).then(r => r.json()),
         fetch(`${API}/payments`).then(r => r.json()),
-        fetch(`${API}/activity`).then(r => r.json()),
+        fetch(`${API}/activity?limit=500`).then(r => r.json()),
         fetch(`${API}/config`).then(r => r.json()),
       ])
       setOverview(prev => {
