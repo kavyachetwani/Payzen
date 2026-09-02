@@ -6,5 +6,6 @@
   "call_tone": "empathetic",
   "brand_name": "Customer Demo Store",
   "auto_escalate": false,
-  "max_discount_percent": 0
+  "max_discount_percent": 0,
+  "whatsapp_enabled": true
 }

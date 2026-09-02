@@ -510,7 +510,7 @@ if (!document.getElementById('stage-11-5-styles')) {
 
 // ─── OVERVIEW PAGE ───────────────────────────────────────────
 
-function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecisions, recentBatchActivity, recentActivity, sessionStats, onSelectPayment }) {
+function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecisions, recentBatchActivity, recentActivity, sessionStats, onSelectPayment, onNavigateActivity }) {
   const prev = prevOverview || {}
   const { value: animNetRecovered, delta: deltaNet, showDelta: showDeltaNet } = useAnimatedValue(overview?.net_recovered || 0, 800, prev.net_recovered)
   const { value: animRecoveryRate } = useAnimatedValue(overview?.recovery_rate || 0, 1000, prev.recovery_rate)
@@ -816,9 +816,9 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
       {recentActivity && recentActivity.length > 0 && (
         <section className="bg-white border border-gray-200 rounded-xl p-5">
           <h3 className="text-lg font-semibold text-gray-700 mb-1">Recent Activity</h3>
-          <p className="text-sm text-gray-400 mb-3">Last {Math.min(recentActivity.length, 25)} pipeline events</p>
+          <p className="text-sm text-gray-400 mb-3">Last {Math.min(recentActivity.length, 10)} pipeline events</p>
           <div className="space-y-1.5 max-h-80 overflow-y-auto">
-            {recentActivity.slice(0, 25).map((a, i) => (
+            {recentActivity.slice(0, 10).map((a, i) => (
               <div key={i} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition text-sm animate-feed-in"
                 style={{ animationDelay: `${i * 30}ms` }}>
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -847,6 +847,11 @@ function OverviewPage({ overview, prevOverview, onNavigateTable, onNavigateDecis
               </div>
             ))}
           </div>
+          {recentActivity.length > 10 && (
+            <button onClick={onNavigateActivity} className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium pt-3 border-t border-gray-100 mt-2 transition">
+              View all {recentActivity.length} events in Activity tab →
+            </button>
+          )}
         </section>
       )}
 
@@ -959,110 +964,134 @@ function SettingsPanel({ config, onSave, saving }) {
   const hasChanges = JSON.stringify(form) !== JSON.stringify(config)
 
   return (
-    <div className="max-w-2xl space-y-6 pb-12">
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-1">Merchant Policy</h3>
-        <p className="text-sm text-gray-400 mb-6">Configure how the recovery system contacts your customers. Changes apply to the next batch run.</p>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+      <div className="space-y-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-700 mb-1">Merchant Policy</h3>
+          <p className="text-sm text-gray-400 mb-6">Configure how the recovery system contacts your customers. Changes apply to the next batch run.</p>
 
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-700">SMS Notifications</p>
-              <p className="text-xs text-gray-400">Send retry-link SMS to customers</p>
-            </div>
-            <button onClick={() => handleChange('sms_enabled', !form.sms_enabled)}
-              className={`relative w-11 h-6 rounded-full transition ${form.sms_enabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
-              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.sms_enabled ? 'left-[22px]' : 'left-0.5'}`} />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Phone Calls</p>
-              <p className="text-xs text-gray-400">Enable automated recovery calls</p>
-            </div>
-            <button onClick={() => handleChange('calls_enabled', !form.calls_enabled)}
-              className={`relative w-11 h-6 rounded-full transition ${form.calls_enabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
-              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.calls_enabled ? 'left-[22px]' : 'left-0.5'}`} />
-            </button>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">Min Amount for Calls</label>
-            <p className="text-xs text-gray-400 mb-1">Only call for payments above this amount</p>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400">₹</span>
-              <input type="number" value={form.call_min_amount || 0}
-                onChange={e => handleChange('call_min_amount', parseInt(e.target.value) || 0)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-32 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">Brand Name</label>
-            <p className="text-xs text-gray-400 mb-1">Shown in SMS and call scripts</p>
-            <input type="text" value={form.brand_name || ''}
-              onChange={e => handleChange('brand_name', e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">SMS Template</label>
-            <p className="text-xs text-gray-400 mb-1">Variables: {'{service}'}, {'{amount}'}, {'{link}'}</p>
-            <textarea value={form.sms_template || ''} rows={2}
-              onChange={e => handleChange('sms_template', e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none resize-none" />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">Call Tone</label>
-            <p className="text-xs text-gray-400 mb-1">Communication style for recovery calls</p>
-            <select value={form.call_tone || 'empathetic'}
-              onChange={e => handleChange('call_tone', e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none">
-              <option value="empathetic">Empathetic</option>
-              <option value="professional">Professional</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-
-          <div className="border-t border-gray-100 pt-5 mt-5">
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700">Send to WhatsApp</p>
-                <p className="text-xs text-gray-400">Deliver agent messages via WhatsApp during recovery chats</p>
+                <p className="text-sm font-medium text-gray-700">SMS Notifications</p>
+                <p className="text-xs text-gray-400">Send retry-link SMS to customers</p>
               </div>
-              <button onClick={() => handleChange('whatsapp_enabled', !form.whatsapp_enabled)}
-                className={`relative w-11 h-6 rounded-full transition ${form.whatsapp_enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.whatsapp_enabled ? 'left-[22px]' : 'left-0.5'}`} />
+              <button onClick={() => handleChange('sms_enabled', !form.sms_enabled)}
+                className={`relative w-11 h-6 rounded-full transition ${form.sms_enabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.sms_enabled ? 'left-[22px]' : 'left-0.5'}`} />
               </button>
             </div>
-          </div>
-        </div>
 
-        <div className="mt-6 flex items-center gap-3">
-          <button onClick={() => onSave(form)} disabled={saving || !hasChanges}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition shadow-sm">
-            {saving ? 'Saving...' : 'Save Policy'}
-          </button>
-          {!hasChanges && <span className="text-xs text-gray-400">No unsaved changes</span>}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Phone Calls</p>
+                <p className="text-xs text-gray-400">Enable automated recovery calls</p>
+              </div>
+              <button onClick={() => handleChange('calls_enabled', !form.calls_enabled)}
+                className={`relative w-11 h-6 rounded-full transition ${form.calls_enabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.calls_enabled ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Min Amount for Calls</label>
+              <p className="text-xs text-gray-400 mb-1">Only call for payments above this amount</p>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">₹</span>
+                <input type="number" value={form.call_min_amount || 0}
+                  onChange={e => handleChange('call_min_amount', parseInt(e.target.value) || 0)}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-32 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Brand Name</label>
+              <p className="text-xs text-gray-400 mb-1">Shown in SMS and call scripts</p>
+              <input type="text" value={form.brand_name || ''}
+                onChange={e => handleChange('brand_name', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">SMS Template</label>
+              <p className="text-xs text-gray-400 mb-1">Variables: {'{service}'}, {'{amount}'}, {'{link}'}</p>
+              <textarea value={form.sms_template || ''} rows={2}
+                onChange={e => handleChange('sms_template', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none resize-none" />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Call Tone</label>
+              <p className="text-xs text-gray-400 mb-1">Communication style for recovery calls</p>
+              <select value={form.call_tone || 'empathetic'}
+                onChange={e => handleChange('call_tone', e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none">
+                <option value="empathetic">Empathetic</option>
+                <option value="professional">Professional</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+
+            <div className="border-t border-gray-100 pt-5 mt-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Send to WhatsApp</p>
+                  <p className="text-xs text-gray-400">Deliver agent messages via WhatsApp during recovery chats</p>
+                </div>
+                <button onClick={() => handleChange('whatsapp_enabled', !form.whatsapp_enabled)}
+                  className={`relative w-11 h-6 rounded-full transition ${form.whatsapp_enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.whatsapp_enabled ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center gap-3">
+            <button onClick={() => onSave(form)} disabled={saving || !hasChanges}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition shadow-sm">
+              {saving ? 'Saving...' : 'Save Policy'}
+            </button>
+            {!hasChanges && <span className="text-xs text-gray-400">No unsaved changes</span>}
+          </div>
         </div>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
-        <h4 className="font-medium text-gray-700 mb-2">How Tiered Approval Works</h4>
-        <div className="space-y-2">
-          <div className="flex gap-2 items-start">
-            <TierBadge tier={1} />
-            <p><span className="font-medium text-gray-700">Automated</span> — retries, constraint enforcement, timing optimization. No merchant input needed.</p>
+      <div className="space-y-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+          <h4 className="font-medium text-gray-700 mb-2">How Tiered Approval Works</h4>
+          <div className="space-y-2">
+            <div className="flex gap-2 items-start">
+              <TierBadge tier={1} />
+              <p><span className="font-medium text-gray-700">Automated</span> — retries, constraint enforcement, timing optimization. No merchant input needed.</p>
+            </div>
+            <div className="flex gap-2 items-start">
+              <TierBadge tier={2} />
+              <p><span className="font-medium text-gray-700">Policy-driven</span> — your settings above control SMS, calls, and contact preferences. Configure once, applied to all.</p>
+            </div>
+            <div className="flex gap-2 items-start">
+              <TierBadge tier={3} />
+              <p><span className="font-medium text-gray-700">Business decisions</span> — mandate cancellations need your judgment. Appears in the Decisions tab.</p>
+            </div>
           </div>
-          <div className="flex gap-2 items-start">
-            <TierBadge tier={2} />
-            <p><span className="font-medium text-gray-700">Policy-driven</span> — your settings above control SMS, calls, and contact preferences. Configure once, applied to all.</p>
+        </div>
+
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-sm text-gray-600">
+          <h4 className="font-medium text-emerald-800 mb-2">What Gets Recovered</h4>
+          <div className="space-y-1.5">
+            <p><span className="font-medium text-emerald-700">Insufficient funds</span> — auto-retried at optimal times based on salary/deposit patterns.</p>
+            <p><span className="font-medium text-emerald-700">Bank outages</span> — detected via BIN clustering, retried after outage window passes.</p>
+            <p><span className="font-medium text-emerald-700">AFA stuck</span> — SMS/call nudges to complete additional factor authentication.</p>
+            <p><span className="font-medium text-emerald-700">Card expired</span> — card-update links sent to customers.</p>
+            <p><span className="font-medium text-emerald-700">Mandate issues</span> — escalated for merchant decision (Tier 3).</p>
           </div>
-          <div className="flex gap-2 items-start">
-            <TierBadge tier={3} />
-            <p><span className="font-medium text-gray-700">Business decisions</span> — mandate cancellations need your judgment. Appears in the Decisions tab.</p>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-gray-600">
+          <h4 className="font-medium text-blue-800 mb-2">Compliance Built In</h4>
+          <div className="space-y-1.5">
+            <p><span className="font-medium text-blue-700">RBI mandate rules</span> — pre-debit notifications enforced, AFA thresholds respected.</p>
+            <p><span className="font-medium text-blue-700">Retry limits</span> — max 3 retries per payment, exponential backoff between attempts.</p>
+            <p><span className="font-medium text-blue-700">Audit trail</span> — every action logged with timestamp, tier, and outcome for compliance review.</p>
           </div>
         </div>
       </div>
@@ -1073,6 +1102,9 @@ function SettingsPanel({ config, onSave, saving }) {
 // ─── ACTIVITY FEED ──────────────────────────────────────────
 
 function ActivityFeed({ activity, onSelectPayment }) {
+  const [page, setPage] = useState(0)
+  const perPage = 30
+
   if (!activity || activity.length === 0) {
     return (
       <div className="text-center py-32">
@@ -1083,9 +1115,27 @@ function ActivityFeed({ activity, onSelectPayment }) {
     )
   }
 
+  const totalPages = Math.ceil(activity.length / perPage)
+  const start = page * perPage
+  const end = Math.min(start + perPage, activity.length)
+  const pageItems = activity.slice(start, end)
+
   return (
     <div className="space-y-2 pb-12">
-      <p className="text-sm text-gray-400 mb-4">Recent pipeline activity — newest first</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-gray-400">Showing {start + 1}–{end} of {activity.length} events</p>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Previous
+          </button>
+          <span className="text-sm text-gray-500">Page {page + 1} of {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Next
+          </button>
+        </div>
+      </div>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <table className="w-full text-[14px]">
           <thead>
@@ -1100,8 +1150,8 @@ function ActivityFeed({ activity, onSelectPayment }) {
             </tr>
           </thead>
           <tbody>
-            {activity.slice(0, 100).map((a, i) => (
-              <tr key={i} className="border-b border-gray-100 hover:bg-blue-50/30 transition">
+            {pageItems.map((a, i) => (
+              <tr key={start + i} className="border-b border-gray-100 hover:bg-blue-50/30 transition">
                 <td className="px-4 py-3.5">
                   <button onClick={() => onSelectPayment && onSelectPayment(a.payment_id)} className="text-blue-600 hover:text-blue-800 font-mono text-[13px] font-medium">
                     {a.payment_id}
@@ -1130,10 +1180,22 @@ function ActivityFeed({ activity, onSelectPayment }) {
             ))}
           </tbody>
         </table>
-        {activity.length > 100 && (
-          <p className="text-xs text-gray-400 text-center py-2 border-t border-gray-100">Showing first 100 of {activity.length}</p>
-        )}
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-gray-400">Showing {start + 1}–{end} of {activity.length}</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              Previous
+            </button>
+            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1253,7 +1315,7 @@ function PaymentsTable({ payments, onSelect, initialOutcomeFilter }) {
 
 // ─── DETAIL VIEW ─────────────────────────────────────────────
 
-function DetailView({ detail, onBack, onApprove, onReject }) {
+function DetailView({ detail, onBack, onApprove, onReject, devMode }) {
   if (!detail) return null
   const { payment, diagnosis, status, final_outcome, amount_recovered, action_cost, net_recovered, attempt_history, events, business_decision, tier } = detail
 
@@ -1302,7 +1364,17 @@ function DetailView({ detail, onBack, onApprove, onReject }) {
         <div className="grid grid-cols-2 gap-y-2 text-sm">
           <div><span className="text-gray-400">Failure Code:</span> <span className="font-mono text-gray-700">{payment.failure_reason_code}</span></div>
           <div><span className="text-gray-400">Failure Time:</span> <span className="font-mono text-gray-700 text-xs">{payment.failure_timestamp}</span></div>
-          <div><span className="text-gray-400">Ground Truth:</span> <span className="text-gray-700">{payment.ground_truth_cause?.replace(/_/g, ' ')}</span></div>
+          {devMode && (
+            <div>
+              <span className="text-gray-400">Ground Truth:</span>{' '}
+              <span className="text-gray-700">{payment.ground_truth_cause?.replace(/_/g, ' ')}</span>
+              {diagnosis?.diagnosed_cause && payment.ground_truth_cause && (
+                diagnosis.diagnosed_cause === payment.ground_truth_cause
+                  ? <span className="ml-2 text-xs text-emerald-600 font-medium">✓ Correct</span>
+                  : <span className="ml-2 text-xs text-red-500 font-medium">✗ Incorrect</span>
+              )}
+            </div>
+          )}
           <div><span className="text-gray-400">Category:</span> <span className="text-gray-700">{payment.payment_category}</span></div>
         </div>
       </div>
@@ -1854,6 +1926,7 @@ function App() {
   const [dismissingIds, setDismissingIds] = useState({})
   const [sessionStats, setSessionStats] = useState({ resolved: 0, recovered: 0, writtenOff: 0, churned: 0, initialDecisions: null })
   const [showSetup, setShowSetup] = useState(true)
+  const [devMode, setDevMode] = useState(false)
   const prevOverviewRef = useRef({})
   const toastId = useRef(0)
 
@@ -2081,9 +2154,9 @@ function App() {
         </nav>
 
         {tab === 'detail' && detail ? (
-          <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} />
+          <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} devMode={devMode} />
         ) : tab === 'overview' ? (
-          <OverviewPage overview={overview} prevOverview={prevOverviewRef.current} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} recentActivity={activity} sessionStats={sessionStats} onSelectPayment={selectPayment} />
+          <OverviewPage overview={overview} prevOverview={prevOverviewRef.current} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} recentActivity={activity} sessionStats={sessionStats} onSelectPayment={selectPayment} onNavigateActivity={() => setTab('activity')} />
         ) : tab === 'decisions' ? (
           <DecisionsQueue decisions={decisions} onApprove={approveDecision} onReject={rejectDecision} onSelect={selectPayment} approving={approving} onChat={setChatPaymentId} dismissingIds={dismissingIds} chattingPaymentId={chatPaymentId} />
         ) : tab === 'payments' ? (
@@ -2097,6 +2170,16 @@ function App() {
         ) : null}
       </div>
 
+      <div className="fixed bottom-4 right-4 z-40">
+        <button onClick={() => setDevMode(d => !d)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm border transition ${devMode ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-white/80 border-gray-200 text-gray-400 hover:text-gray-600'}`}>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          Dev Mode {devMode ? 'ON' : 'OFF'}
+        </button>
+      </div>
+
       <BatchActivityOverlay processing={batchProcessing} items={batchActivity} overview={overview}
         onDismiss={() => { setBatchProcessing(false); setBatchActivity([]); addToast('Recovery batch complete', 'success') }}
         onSelectPayment={selectPayment} />
@@ -2105,15 +2188,51 @@ function App() {
 
       {showSetup && config && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4 animate-card-enter">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto mx-4 animate-card-enter">
             <div className="px-6 pt-6 pb-2">
-              <h2 className="text-xl font-bold text-gray-800">Welcome to AI Revenue Recovery</h2>
+              <h2 className="text-xl font-bold text-gray-800">Welcome to Payzen</h2>
               <p className="text-sm text-gray-400 mt-1">Review your merchant policy before getting started. You can change these anytime in Settings.</p>
             </div>
-            <div className="px-6 py-4">
+            <div className="px-6 py-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SetupForm config={config} onSave={(form) => {
                 saveConfig(form).then(() => setShowSetup(false))
               }} saving={saving} onSkip={() => setShowSetup(false)} />
+              <div className="space-y-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+                  <h4 className="font-medium text-gray-700 mb-2">How Tiered Approval Works</h4>
+                  <div className="space-y-2">
+                    <div className="flex gap-2 items-start">
+                      <TierBadge tier={1} />
+                      <p><span className="font-medium text-gray-700">Automated</span> — retries, constraint enforcement, timing optimization.</p>
+                    </div>
+                    <div className="flex gap-2 items-start">
+                      <TierBadge tier={2} />
+                      <p><span className="font-medium text-gray-700">Policy-driven</span> — SMS, calls, and contact preferences from your settings.</p>
+                    </div>
+                    <div className="flex gap-2 items-start">
+                      <TierBadge tier={3} />
+                      <p><span className="font-medium text-gray-700">Business decisions</span> — mandate cancellations need your judgment.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-sm text-gray-600">
+                  <h4 className="font-medium text-emerald-800 mb-2">What Gets Recovered</h4>
+                  <div className="space-y-1.5">
+                    <p><span className="font-medium text-emerald-700">Insufficient funds</span> — auto-retried at optimal times.</p>
+                    <p><span className="font-medium text-emerald-700">Bank outages</span> — detected via BIN clustering.</p>
+                    <p><span className="font-medium text-emerald-700">AFA stuck</span> — SMS/call nudges for authentication.</p>
+                    <p><span className="font-medium text-emerald-700">Card expired</span> — update links sent.</p>
+                  </div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-gray-600">
+                  <h4 className="font-medium text-blue-800 mb-2">Compliance Built In</h4>
+                  <div className="space-y-1.5">
+                    <p><span className="font-medium text-blue-700">RBI mandate rules</span> — pre-debit notifications enforced.</p>
+                    <p><span className="font-medium text-blue-700">Retry limits</span> — max 3 retries, exponential backoff.</p>
+                    <p><span className="font-medium text-blue-700">Audit trail</span> — every action logged for review.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
