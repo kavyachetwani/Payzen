@@ -29,6 +29,7 @@ from pydantic import BaseModel
 
 from backend.pipeline import PipelineServer
 from voice.escalation_agent import EscalationAgent
+from voice.whatsapp import send_whatsapp
 
 app = FastAPI(title="AI Revenue Recovery", version="0.3.0")
 
@@ -53,6 +54,7 @@ class ConfigUpdate(BaseModel):
     brand_name: str | None = None
     auto_escalate: bool | None = None
     max_discount_percent: int | None = None
+    whatsapp_enabled: bool | None = None
 
 
 class DecisionResponse(BaseModel):
@@ -202,6 +204,10 @@ def start_escalation(payment_id: str):
         amount=decision["amount"],
         payment_category=decision.get("payment_category", ""),
     )
+    wa_sent = False
+    if config.get("whatsapp_enabled") and result.get("agent_message"):
+        wa_sent = send_whatsapp(result["agent_message"])
+    result["whatsapp_sent"] = wa_sent
     return result
 
 
@@ -210,6 +216,11 @@ def send_escalation_message(payment_id: str, body: ChatMessage):
     result = escalation_agent.process_customer_message(payment_id, body.message)
     if "error" in result:
         return {"error": result["error"], "message": f"No active conversation for {payment_id}"}
+    config = pipeline.get_config()
+    wa_sent = False
+    if config.get("whatsapp_enabled") and result.get("agent_message"):
+        wa_sent = send_whatsapp(result["agent_message"])
+    result["whatsapp_sent"] = wa_sent
     return result
 
 

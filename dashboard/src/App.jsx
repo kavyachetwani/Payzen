@@ -1025,6 +1025,19 @@ function SettingsPanel({ config, onSave, saving }) {
               <option value="urgent">Urgent</option>
             </select>
           </div>
+
+          <div className="border-t border-gray-100 pt-5 mt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Send to WhatsApp</p>
+                <p className="text-xs text-gray-400">Deliver agent messages via WhatsApp during recovery chats</p>
+              </div>
+              <button onClick={() => handleChange('whatsapp_enabled', !form.whatsapp_enabled)}
+                className={`relative w-11 h-6 rounded-full transition ${form.whatsapp_enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.whatsapp_enabled ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-6 flex items-center gap-3">
@@ -1400,7 +1413,7 @@ function DetailView({ detail, onBack, onApprove, onReject }) {
 
 // ─── CHAT WIDGET ──────────────────────────────────────────
 
-function ChatWidget({ paymentId, onClose, onChatComplete }) {
+function ChatWidget({ paymentId, onClose, onChatComplete, whatsappEnabled }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -1421,7 +1434,7 @@ function ChatWidget({ paymentId, onClose, onChatComplete }) {
       .then(r => r.json())
       .then(data => {
         if (data.agent_message) {
-          setMessages([{ role: 'agent', text: data.agent_message }])
+          setMessages([{ role: 'agent', text: data.agent_message, whatsapp: data.whatsapp_sent }])
           setState(data.state)
         }
       })
@@ -1451,7 +1464,7 @@ function ChatWidget({ paymentId, onClose, onChatComplete }) {
         setChatError(data.message || 'Conversation error')
         setLastFailedMsg(msg)
       } else if (data.agent_message) {
-        setMessages(prev => [...prev, { role: 'agent', text: data.agent_message }])
+        setMessages(prev => [...prev, { role: 'agent', text: data.agent_message, whatsapp: data.whatsapp_sent }])
         setState(data.state)
         if (data.conversation_ended) setEnded(true)
       }
@@ -1496,7 +1509,7 @@ function ChatWidget({ paymentId, onClose, onChatComplete }) {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ minHeight: '200px', maxHeight: '340px' }}>
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'agent' ? 'justify-start' : 'justify-end'}`}>
+          <div key={i} className={`flex flex-col ${m.role === 'agent' ? 'items-start' : 'items-end'}`}>
             <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
               m.role === 'agent'
                 ? 'bg-gray-100 text-gray-800 rounded-bl-sm'
@@ -1504,6 +1517,12 @@ function ChatWidget({ paymentId, onClose, onChatComplete }) {
             }`}>
               {m.text}
             </div>
+            {m.role === 'agent' && m.whatsapp && (
+              <span className="flex items-center gap-1 mt-0.5 ml-1 text-[10px] text-green-600">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 01-4.108-1.135l-.288-.171-2.988.783.796-2.916-.187-.299A8 8 0 1112 20z"/></svg>
+                Sent via WhatsApp
+              </span>
+            )}
           </div>
         ))}
         {loading && (
@@ -1798,6 +1817,8 @@ function SetupForm({ config, onSave, saving, onSkip }) {
           className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-24 mt-1 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none" />
       </div>
 
+      <Toggle label="Send to WhatsApp" desc="Deliver agent messages via WhatsApp during chats" field="whatsapp_enabled" />
+
       <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
         <button onClick={() => onSave(form)} disabled={saving}
           className="flex-1 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition">
@@ -2080,7 +2101,7 @@ function App() {
         onDismiss={() => { setBatchProcessing(false); setBatchActivity([]); addToast('Recovery batch complete', 'success') }}
         onSelectPayment={selectPayment} />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-      <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} onChatComplete={handleChatComplete} />
+      <ChatWidget paymentId={chatPaymentId} onClose={() => setChatPaymentId(null)} onChatComplete={handleChatComplete} whatsappEnabled={config?.whatsapp_enabled} />
 
       {showSetup && config && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">

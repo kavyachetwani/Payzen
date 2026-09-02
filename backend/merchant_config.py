@@ -16,6 +16,7 @@ DEFAULTS = {
     "brand_name": "Customer Demo Store",
     "auto_escalate": False,
     "max_discount_percent": 0,
+    "whatsapp_enabled": False,
 }
 
 CONFIG_PATH = Path(__file__).parent / "merchant_config.json"
