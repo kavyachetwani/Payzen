@@ -1119,6 +1119,7 @@ function SettingsPanel({ config, onSave, saving }) {
 
 function ActivityFeed({ activity, onSelectPayment }) {
   const [page, setPage] = useState(0)
+  const [selectedDate, setSelectedDate] = useState(null)
   const perPage = 30
 
   if (!activity || activity.length === 0) {
@@ -1131,26 +1132,80 @@ function ActivityFeed({ activity, onSelectPayment }) {
     )
   }
 
-  const totalPages = Math.ceil(activity.length / perPage)
+  const dateMap = {}
+  activity.forEach(a => {
+    const day = a.sim_timestamp?.slice(0, 10)
+    if (day) {
+      if (!dateMap[day]) dateMap[day] = []
+      dateMap[day].push(a)
+    }
+  })
+  const sortedDates = Object.keys(dateMap).sort()
+
+  const fmtDate = (d) => {
+    const [, m, day] = d.split('-')
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    return `${months[parseInt(m) - 1]} ${parseInt(day)}`
+  }
+
+  const filtered = selectedDate ? (dateMap[selectedDate] || []) : activity
+  const succeeded = filtered.filter(a => a.amount_recovered > 0)
+  const totalRecovered = succeeded.reduce((s, a) => s + (a.amount_recovered || 0), 0)
+
+  const totalPages = Math.ceil(filtered.length / perPage)
   const start = page * perPage
-  const end = Math.min(start + perPage, activity.length)
-  const pageItems = activity.slice(start, end)
+  const end = Math.min(start + perPage, filtered.length)
+  const pageItems = filtered.slice(start, end)
+
+  const selectDate = (d) => {
+    setSelectedDate(d)
+    setPage(0)
+  }
 
   return (
     <div className="space-y-2 pb-12">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-gray-400">Showing {start + 1}–{end} of {activity.length} events</p>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
-            Previous
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button onClick={() => selectDate(null)}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+            selectedDate === null
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+          }`}>
+          All <span className={`ml-1 text-xs ${selectedDate === null ? 'text-blue-200' : 'text-gray-400'}`}>{activity.length}</span>
+        </button>
+        {sortedDates.map(d => (
+          <button key={d} onClick={() => selectDate(d)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+              selectedDate === d
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+            }`}>
+            {fmtDate(d)} <span className={`ml-1 text-xs ${selectedDate === d ? 'text-blue-200' : 'text-gray-400'}`}>{dateMap[d].length}</span>
           </button>
-          <span className="text-sm text-gray-500">Page {page + 1} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
-            Next
-          </button>
-        </div>
+        ))}
+      </div>
+
+      <div className="text-sm text-gray-500 pb-1">
+        <span className="font-medium text-gray-700">{selectedDate ? fmtDate(selectedDate) : 'All days'}</span>
+        {' — '}
+        {filtered.length} events, {succeeded.length} succeeded, <span className="text-emerald-600 font-medium">{fmtFull(totalRecovered)}</span> recovered
+      </div>
+
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-sm text-gray-400">Showing {filtered.length > 0 ? start + 1 : 0}–{end} of {filtered.length} events</p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              Previous
+            </button>
+            <span className="text-sm text-gray-500">Page {page + 1} of {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              Next
+            </button>
+          </div>
+        )}
       </div>
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <table className="w-full text-[14px]">
@@ -1199,7 +1254,7 @@ function ActivityFeed({ activity, onSelectPayment }) {
       </div>
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-gray-400">Showing {start + 1}–{end} of {activity.length}</p>
+          <p className="text-xs text-gray-400">Showing {start + 1}–{end} of {filtered.length}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
               className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
