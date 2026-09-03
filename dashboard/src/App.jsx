@@ -1386,7 +1386,7 @@ function PaymentsTable({ payments, onSelect, initialOutcomeFilter }) {
 
 // ─── DETAIL VIEW ─────────────────────────────────────────────
 
-function DetailView({ detail, onBack, onApprove, onReject, devMode }) {
+function DetailView({ detail, onBack, onApprove, onReject }) {
   if (!detail) return null
   const { payment, diagnosis, status, final_outcome, amount_recovered, action_cost, net_recovered, attempt_history, events, business_decision, tier } = detail
 
@@ -1435,17 +1435,6 @@ function DetailView({ detail, onBack, onApprove, onReject, devMode }) {
         <div className="grid grid-cols-2 gap-y-2 text-sm">
           <div><span className="text-gray-400">Failure Code:</span> <span className="font-mono text-gray-700">{payment.failure_reason_code}</span></div>
           <div><span className="text-gray-400">Failure Time:</span> <span className="font-mono text-gray-700 text-xs">{payment.failure_timestamp}</span></div>
-          {devMode && (
-            <div>
-              <span className="text-gray-400">Ground Truth:</span>{' '}
-              <span className="text-gray-700">{payment.ground_truth_cause?.replace(/_/g, ' ')}</span>
-              {diagnosis?.diagnosed_cause && payment.ground_truth_cause && (
-                diagnosis.diagnosed_cause === payment.ground_truth_cause
-                  ? <span className="ml-2 text-xs text-emerald-600 font-medium">✓ Correct</span>
-                  : <span className="ml-2 text-xs text-red-500 font-medium">✗ Incorrect</span>
-              )}
-            </div>
-          )}
           <div><span className="text-gray-400">Category:</span> <span className="text-gray-700">{payment.payment_category}</span></div>
         </div>
       </div>
@@ -1997,7 +1986,6 @@ function App() {
   const [dismissingIds, setDismissingIds] = useState({})
   const [sessionStats, setSessionStats] = useState({ resolved: 0, recovered: 0, writtenOff: 0, churned: 0, initialDecisions: null })
   const [showSetup, setShowSetup] = useState(true)
-  const [devMode, setDevMode] = useState(false)
   const prevOverviewRef = useRef({})
   const toastId = useRef(0)
 
@@ -2225,7 +2213,7 @@ function App() {
         </nav>
 
         {tab === 'detail' && detail ? (
-          <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} devMode={devMode} />
+          <DetailView detail={detail} onBack={() => setTab('payments')} onApprove={approveDecision} onReject={rejectDecision} />
         ) : tab === 'overview' ? (
           <OverviewPage overview={overview} prevOverview={prevOverviewRef.current} onNavigateTable={navigateToTable} onNavigateDecisions={() => setTab('decisions')} recentBatchActivity={batchActivity} recentActivity={activity} sessionStats={sessionStats} onSelectPayment={selectPayment} onNavigateActivity={() => setTab('activity')} />
         ) : tab === 'decisions' ? (
@@ -2239,16 +2227,6 @@ function App() {
         ) : tab === 'settings' ? (
           <SettingsPanel config={config} onSave={saveConfig} saving={saving} />
         ) : null}
-      </div>
-
-      <div className="fixed bottom-4 right-4 z-40">
-        <button onClick={() => setDevMode(d => !d)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm border transition ${devMode ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-white/80 border-gray-200 text-gray-400 hover:text-gray-600'}`}>
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-          Dev Mode {devMode ? 'ON' : 'OFF'}
-        </button>
       </div>
 
       <BatchActivityOverlay processing={batchProcessing} items={batchActivity} overview={overview}
