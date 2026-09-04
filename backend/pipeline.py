@@ -24,7 +24,7 @@ from simclock.test_simclock import FakeFirestoreClient
 from simclock.event_queue import EventQueue
 
 from action.graph import build_graph
-from action.nodes import reset_globals
+from action.nodes import reset_globals, _get_db
 from action.compliance import get_dnd_set, reset_dnd
 from action.retry_processor import (
     process_retry_event, simulate_retry_outcome, reset_success_rates,
@@ -601,6 +601,30 @@ class PipelineServer:
 
     # ── Single Payment Test ──
 
+    def _insert_test_record_into_db(self, r: dict):
+        conn = _get_db()
+        raw_bin = r.get("bin", "")
+        bin_prefix = raw_bin[:4] if len(raw_bin) >= 4 else ""
+        mid = r.get("mandate_id", f"M_{r['payment_id']}")
+        cid = r.get("customer_id", "")
+        conn.execute("INSERT OR REPLACE INTO banks VALUES (?, ?)",
+                     (r.get("bank_name", "UNKNOWN"), ""))
+        conn.execute("INSERT OR REPLACE INTO customers VALUES (?, ?, ?)",
+                     (cid, r.get("customer_prior_success_count", 0),
+                      r.get("customer_prior_failure_count", 0)))
+        conn.execute("INSERT OR REPLACE INTO mandates VALUES (?, ?, ?)",
+                     (mid, cid, r.get("mandate_expiry_date", "")))
+        conn.execute(
+            "INSERT OR REPLACE INTO payments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (r["payment_id"], cid, mid, r.get("amount", 0),
+             r.get("payment_category", "emi"), r.get("payment_method", "enach"),
+             r.get("bank_name", "UNKNOWN"), raw_bin, bin_prefix,
+             r.get("failure_timestamp", ""), r.get("failure_reason_code", "51"),
+             int(r.get("amount_above_afa_threshold", 0)),
+             int(r.get("pre_debit_notification_sent", True)),
+             r.get("mandate_expiry_date", "")))
+        conn.commit()
+
     def process_single(self, record: dict) -> dict:
         """Process a single test payment through the full pipeline."""
         if not self.batch_run:
@@ -610,6 +634,8 @@ class PipelineServer:
         pid = record["payment_id"]
         self.records.append(record)
         self.record_map[pid] = record
+
+        self._insert_test_record_into_db(record)
 
         app = build_graph()
         dnd_set = get_dnd_set()
