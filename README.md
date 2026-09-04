@@ -1,6 +1,5 @@
 # Payzen: AI Revenue Recovery for Recurring Payments
 
-**Razorpay AI Buildathon | Track 3: AI Revenue Recovery | Solo build**
 
 ![Architecture](docs/architecture.svg)
 
@@ -125,17 +124,6 @@ Result: CUST_00314 received 2 phone calls (max 1). CUST_00348 received 5 SMS (ma
 Fix: three changes across `run_batch_multi.py` and `retry_processor.py`. DND check before scheduling in Phase 1, constraint recording in Phase 1, and current-action tracking in Phase 2. A companion bug in the audit trail (logging pre-constraint actions instead of actual actions) was fixed simultaneously.
 
 This is a compliance violation that went undetected through all unit tests. It was caught by adversarial stress tests that verified per-customer contact totals across the full batch.
-
----
-
-## Production Path
-
-This system is designed as an add-on to Razorpay's existing subscription infrastructure:
-
-- **Data ingestion:** Razorpay's Subscriptions API emits `subscription.pending` webhooks when recurring payments fail. The same pipeline processes live webhook events with no architectural changes.
-- **Escalation delivery:** Recovery conversations delivered via WhatsApp Business API. 90%+ open rates, two-way async messaging, natural channel for Indian customers.
-- **Multi-tenant:** Each merchant sees only their own data. Razorpay's platform view aggregates cross-merchant intelligence.
-- **Cross-merchant bank intelligence:** If SBI is down for one merchant, it's down for all. A platform-level view enables proactive outage detection before individual merchants notice.
 
 ---
 
