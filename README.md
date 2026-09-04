@@ -1,6 +1,5 @@
 # Payzen: AI Revenue Recovery for Recurring Payments
 
-**Razorpay AI Buildathon | Track 3: AI Revenue Recovery | Solo build**
 
 ![Architecture](docs/architecture.svg)
 
