@@ -127,17 +127,6 @@ This is a compliance violation that went undetected through all unit tests. It w
 
 ---
 
-## Production Path
-
-This system is designed as an add-on to Razorpay's existing subscription infrastructure:
-
-- **Data ingestion:** Razorpay's Subscriptions API emits `subscription.pending` webhooks when recurring payments fail. The same pipeline processes live webhook events with no architectural changes.
-- **Escalation delivery:** Recovery conversations delivered via WhatsApp Business API. 90%+ open rates, two-way async messaging, natural channel for Indian customers.
-- **Multi-tenant:** Each merchant sees only their own data. Razorpay's platform view aggregates cross-merchant intelligence.
-- **Cross-merchant bank intelligence:** If SBI is down for one merchant, it's down for all. A platform-level view enables proactive outage detection before individual merchants notice.
-
----
-
 ## Repository Structure
 
 ```
