@@ -10,10 +10,10 @@ from typing import Optional
 
 SCENARIOS = {
     "too_expensive", "not_using", "switched_competitor",
-    "accidental", "angry_frustrated", "unknown",
+    "accidental", "angry_frustrated", "afa_stuck", "unknown",
 }
 
-TERMINAL_STATES = {"promise_to_pay", "interested_in_downgrade", "refused", "needs_human_escalation"}
+TERMINAL_STATES = {"promise_to_pay", "interested_in_downgrade", "refused", "needs_human_escalation", "completed_auth", "needs_help"}
 
 MAX_TURNS = 5
 
@@ -74,6 +74,18 @@ class ConversationState:
         if any(w in text for w in ["baad mein", "kal", "callback", "phir call", "busy hoon", "meeting mein",
                                     "sochna padega", "dekhunga", "bataunga", "next week", "later"]):
             self.outcome = "wants_callback"
+            return self.outcome
+
+        # Completed auth — customer confirms they approved/completed AFA
+        if any(w in text for w in ["ho gaya", "done", "kar liya", "approved", "complete",
+                                    "approve kar diya", "kar diya", "ho gaya approve"]):
+            if self.scenario == "afa_stuck" or any(w in text for w in ["approve", "approved", "ho gaya approve"]):
+                self.outcome = "completed_auth"
+                return self.outcome
+
+        # Needs help — wants human agent for technical issues
+        if any(w in text for w in ["senior manager", "manager se baat", "connect karo", "technical team"]):
+            self.outcome = "needs_help"
             return self.outcome
 
         # Promise to pay — explicit agreement to act NOW

@@ -198,11 +198,13 @@ def start_escalation(payment_id: str):
         return {"error": "not_found", "message": f"No business decision for {payment_id}"}
     config = pipeline.get_config()
     escalation_agent.brand_name = config.get("brand_name", "YourBrand")
+    cause = decision.get("cause", "")
     result = escalation_agent.start_conversation(
         payment_id=payment_id,
         customer_id=decision["customer_id"],
         amount=decision["amount"],
         payment_category=decision.get("payment_category", ""),
+        initial_scenario="afa_stuck" if cause == "afa_stuck" else None,
     )
     wa_sent = False
     if config.get("whatsapp_enabled") and result.get("agent_message"):

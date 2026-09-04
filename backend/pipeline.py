@@ -43,13 +43,18 @@ DATA_PATH = Path(__file__).parent.parent / "data" / "failed_payments.json"
 BANDIT_CONFIG = Path(__file__).parent.parent / "decision" / "bandit_config.json"
 RETRY_DATA = Path(__file__).parent.parent / "data" / "retry_outcomes.json"
 
-TIER_3_CAUSES = {"mandate_revoked"}
+TIER_3_CAUSES = {"mandate_revoked", "afa_stuck"}
 
 TIER_3_RECOMMENDATIONS = {
     "mandate_revoked": {
         "type": "recovery_conversation",
         "summary": "Customer cancelled their mandate. Recommend a recovery conversation to understand the reason and offer re-enrollment or a plan adjustment.",
         "options": ["approve_conversation", "offer_downgrade", "mark_churned"],
+    },
+    "afa_stuck": {
+        "type": "recovery_conversation",
+        "summary": "Customer's payment failed because AFA (Additional Factor Authentication) was not completed. Recommend a conversation to guide the customer through completing bank authentication.",
+        "options": ["approve_conversation", "mark_churned"],
     },
 }
 
@@ -241,14 +246,19 @@ class PipelineServer:
 
         amount = record["amount"]
         category = record.get("payment_category", "")
-        suggested_downgrade = round(amount * 0.6, 0) if amount > 5000 else None
+        suggested_downgrade = round(amount * 0.6, 0) if cause == "mandate_revoked" and amount > 5000 else None
 
         detail = rec["summary"]
-        if suggested_downgrade:
+        if cause == "mandate_revoked" and suggested_downgrade:
             detail = (
                 f"Customer cancelled their ₹{amount:,.0f}/month {category} mandate. "
                 f"Recommend offering ₹{suggested_downgrade:,.0f}/month as an alternative, "
                 f"or initiating a recovery conversation to understand their reason."
+            )
+        elif cause == "afa_stuck":
+            detail = (
+                f"Customer's ₹{amount:,.0f} {category} payment failed — AFA not completed. "
+                f"Recommend a conversation to guide them through bank authentication."
             )
 
         self.business_decisions[pid] = {
@@ -511,17 +521,27 @@ class PipelineServer:
         bd["merchant_response"] = response
 
         record = self.record_map[payment_id]
+        amount = record["amount"]
         outcome = "escalated"
+        amount_recovered = 0.0
+        action_cost = 15.0
 
-        if response == "offer_downgrade" and bd.get("suggested_downgrade"):
-            outcome = "downgrade_offered"
+        if response == "approve_conversation":
+            outcome = "recovered"
+            amount_recovered = amount
+        elif response == "offer_downgrade" and bd.get("suggested_downgrade"):
+            outcome = "recovered"
+            amount_recovered = bd["suggested_downgrade"]
         elif response == "mark_churned":
             outcome = "merchant_rejected"
+            action_cost = 0.0
+
+        net = amount_recovered - action_cost
 
         self.logger.log_summary({
             "payment_id": payment_id,
             "customer_id": record["customer_id"],
-            "amount": record["amount"],
+            "amount": amount,
             "payment_method": record["payment_method"],
             "payment_category": record["payment_category"],
             "bank_name": record["bank_name"],
@@ -533,9 +553,9 @@ class PipelineServer:
             "is_retryable": False,
             "total_attempts": 0,
             "final_outcome": outcome,
-            "total_amount_recovered": 0.0,
-            "total_action_cost": 0.0,
-            "net_recovered": 0.0,
+            "total_amount_recovered": amount_recovered,
+            "total_action_cost": action_cost,
+            "net_recovered": net,
             "resolution_sim_timestamp": self.clock.now().isoformat(),
             "attempt_history": [],
             "tier": 3,
@@ -546,12 +566,14 @@ class PipelineServer:
             "status": "resolved",
             "cause": bd["cause"],
             "final_outcome": outcome,
-            "amount_recovered": 0.0,
-            "action_cost": 0.0,
+            "amount_recovered": amount_recovered,
+            "action_cost": action_cost,
             "tier": 3,
         }
 
-        self._add_activity(record, f"decision:{response}", outcome, False, 0, 0,
+        success = amount_recovered > 0
+        self._add_activity(record, f"decision:{response}", outcome, success,
+                           amount_recovered, action_cost,
                            f"merchant {response.replace('_', ' ')}")
 
         self.logger.flush_to_json()

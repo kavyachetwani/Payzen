@@ -16,7 +16,7 @@ def route_to_action(state: dict) -> str:
         return "card_update_link"
     elif route == "mandate_resequence":
         return "mandate_resequence"
-    elif route in ("escalation", "escalation_conversation"):
+    elif route in ("escalation", "escalation_conversation", "customer_auth_action"):
         return "escalation"
 
     return "escalation"

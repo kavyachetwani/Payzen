@@ -2,7 +2,7 @@
 
 This is the ONLY LLM usage in the entire system. Uses few-shot examples
 from curated transcripts to generate contextual Hinglish responses for
-mandate_revoked recovery conversations.
+mandate_revoked and afa_stuck recovery conversations.
 
 Falls back to context-aware template responses when the model is unavailable.
 """
@@ -169,6 +169,7 @@ def _template_response(state: ConversationState, brand_name: str = "YourBrand") 
             "switched_competitor": f"Hello ji! {brand_name} se call. {category} plan cancel hua hai. Kya koi aur service try kar rahe hain?",
             "accidental": f"Namaste! {brand_name} se hoon. Aapka {category} mandate cancel ho gaya hai. Kya aapne intentionally kiya tha?",
             "angry_frustrated": f"Namaste! {brand_name} se hoon. Aapka {category} mandate cancel hua hai. Kya main help kar sakta hoon?",
+            "afa_stuck": f"Namaste! {brand_name} se bol raha hoon. Aapka ₹{amount:,.0f} ka {category} payment pending hai — bank authentication complete nahi hua tha. Kya main help kar sakta hoon?",
             "unknown": f"Hi! {brand_name} se call hai. Aapka ₹{amount:,.0f}/month ka {category} mandate cancel hua hai. Kya sab theek hai?",
         }
         return greetings.get(scenario, greetings["unknown"])
@@ -180,6 +181,10 @@ def _template_response(state: ConversationState, brand_name: str = "YourBrand") 
         return "Bilkul ji, jab bhi convenient ho humein call kar lena. Accha din ho!"
     if state.outcome == "refused":
         return f"Koi baat nahi ji, aapki marzi. Agar kabhi {category} zaroorat ho toh yaad rakhiye. Take care!"
+    if state.outcome == "completed_auth":
+        return f"Bahut accha! Authentication complete ho gaya. ₹{amount:,.0f} ka {category} payment ab process ho jayega. Dhanyavaad ji!"
+    if state.outcome == "needs_help":
+        return "Main senior technical team se connect karta hoon. Aapko jaldi update milega."
     if state.outcome == "needs_human_escalation":
         return "Main senior team se connect karta hoon. Aapko jaldi update milega."
     if state.outcome == "interested_in_downgrade":
@@ -230,13 +235,14 @@ def _template_response(state: ConversationState, brand_name: str = "YourBrand") 
         "switched_competitor": f"Accha ji. Hum bhi ₹{downgrade:,.0f}/month pe offer de sakte hain. Dekhna chahenge?",
         "accidental": f"Link bhej raha hoon — ek tap mein ₹{amount:,.0f}/month {category} wapas set ho jayega.",
         "angry_frustrated": "Main samajhta hoon. Batayiye kya issue tha — main personally resolve karunga.",
+        "afa_stuck": f"Simple hai ji — banking app kholo, pending approvals mein ₹{amount:,.0f} ka {brand_name} request approve karo. Ek tap mein done!",
         "unknown": f"Main samajhta hoon ji. Kya aap batayenge kya issue hua? Main help karna chahta hoon.",
     }
     return empathy_offer.get(scenario, empathy_offer["unknown"])
 
 
 class EscalationAgent:
-    """Hinglish escalation agent for mandate_revoked recovery conversations."""
+    """Hinglish escalation agent for mandate_revoked and afa_stuck recovery conversations."""
 
     def __init__(self, brand_name: str = "YourBrand", use_llm: bool = True):
         self.brand_name = brand_name
@@ -249,6 +255,7 @@ class EscalationAgent:
         customer_id: str,
         amount: float,
         payment_category: str = "",
+        initial_scenario: str | None = None,
     ) -> dict:
         state = ConversationState(
             payment_id=payment_id,
@@ -256,6 +263,8 @@ class EscalationAgent:
             amount=amount,
             payment_category=payment_category,
         )
+        if initial_scenario:
+            state.scenario = initial_scenario
         self.conversations[payment_id] = state
 
         greeting = self._generate_response(state)

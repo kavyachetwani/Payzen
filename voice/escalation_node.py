@@ -25,7 +25,7 @@ def reset_agent():
 
 
 def escalation_conversation_node(state: dict) -> dict:
-    """LangGraph node: start an escalation conversation for mandate_revoked."""
+    """LangGraph node: start an escalation conversation for mandate_revoked and afa_stuck."""
     cause = state["diagnosis"]["cause"]
     payment_id = state["payment_id"]
     customer_id = state["customer_id"]
@@ -34,12 +34,13 @@ def escalation_conversation_node(state: dict) -> dict:
 
     agent = get_agent()
 
-    if cause == "mandate_revoked":
+    if cause in ("mandate_revoked", "afa_stuck"):
         result = agent.start_conversation(
             payment_id=payment_id,
             customer_id=customer_id,
             amount=amount,
             payment_category=category,
+            initial_scenario="afa_stuck" if cause == "afa_stuck" else None,
         )
 
         outcome = {
@@ -66,7 +67,7 @@ def escalation_conversation_node(state: dict) -> dict:
         "success": False,
         "amount_recovered": 0.0,
         "action_cost": 0.0,
-        "escalation_reason": f"mandate_revoked — conversation initiated" if cause == "mandate_revoked" else f"escalated: {cause}",
+        "escalation_reason": f"{cause} — conversation initiated" if cause in ("mandate_revoked", "afa_stuck") else f"escalated: {cause}",
     }
 
     return {"action_outcome": outcome, "audit_entry": audit}

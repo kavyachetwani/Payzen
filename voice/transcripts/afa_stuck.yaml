@@ -1,0 +1,268 @@
+scenario: afa_stuck
+description: Customer's payment failed because AFA (Additional Factor Authentication) was not completed
+goal: Guide the customer to complete the authentication so the payment can go through
+
+conversations:
+  - id: afa_01
+    category: emi
+    amount: 12000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol raha hoon. Aapka ₹{amount} ka EMI payment pending hai — authentication complete nahi hua tha. Kya main help kar sakta hoon?"
+      - role: customer
+        text: "Kaunsa authentication? Mujhe koi notification nahi mila."
+      - role: agent
+        text: "Ji, RBI ke rule ke according auto-debit pe ek additional verification hota hai — aapke banking app pe ek approval aata hai. Main abhi ek fresh request bhejta hoon, aap banking app open karke approve kar dena."
+      - role: customer
+        text: "Accha, banking app pe aayega? Ok main check karta hoon."
+      - role: agent
+        text: "Haan ji, 2-3 minute mein notification aayega. Approve karte hi payment ho jayega. Dhanyavaad!"
+    outcome: completed_auth
+
+  - id: afa_02
+    category: subscription
+    amount: 499
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Aapka ₹{amount}/month subscription payment ruk gaya hai — authentication pending tha. Kya aap abhi complete kar sakte hain?"
+      - role: customer
+        text: "Maine toh approve kiya tha yeh pehle!"
+      - role: agent
+        text: "Samajhta hoon ji, pehle ka approval expire ho gaya hoga. Har baar fresh approval chahiye hota hai RBI rules ke according. Main ek naya request bhejta hoon — ek tap mein done ho jayega."
+      - role: customer
+        text: "Ok bhej do, main abhi kar leta hoon."
+      - role: agent
+        text: "Bahut accha! Request bhej diya hai. Banking app check kariye — ₹{amount} ka approval aayega. Thank you ji!"
+    outcome: completed_auth
+
+  - id: afa_03
+    category: sip
+    amount: 5000
+    turns:
+      - role: agent
+        text: "Namaste ji! {brand_name} se hoon. Aapka ₹{amount} ka SIP auto-debit fail ho gaya — authentication approve nahi hua tha. Kya main guide kar sakta hoon?"
+      - role: customer
+        text: "Yeh AFA kya hota hai? Mujhe nahi pata."
+      - role: agent
+        text: "Simple hai ji — RBI ne rule banaya hai ki auto-debit ke liye aapke banking app pe ek approval aata hai. Jaise UPI PIN daalte ho waise. Bas ek tap karna hota hai."
+      - role: customer
+        text: "Accha, toh banking app kholna padega?"
+      - role: agent
+        text: "Haan ji, bas banking app kholo, notifications mein ek pending approval dikhega ₹{amount} ka. Approve karo aur ho gaya!"
+      - role: customer
+        text: "Ok samajh gaya, kar leta hoon."
+      - role: agent
+        text: "Perfect! Koi problem aaye toh humein call kar lena. Dhanyavaad ji!"
+    outcome: completed_auth
+
+  - id: afa_04
+    category: emi
+    amount: 25000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol raha hoon. Aapka ₹{amount} ka EMI payment authentication pending hai. Kya abhi convenient hai complete karne ke liye?"
+      - role: customer
+        text: "Mera banking app kaam nahi kar raha, update chahiye usko."
+      - role: agent
+        text: "Koi baat nahi ji. Do options hain — ek toh app update karke wahan se approve karo. Ya phir net banking pe login karke bhi kar sakte ho. Kya net banking access hai?"
+      - role: customer
+        text: "Net banking toh hai. Wahan se kaise karun?"
+      - role: agent
+        text: "Net banking login karo, phir 'Pending Approvals' ya 'e-Mandate' section mein jaao. Wahan ₹{amount} ka pending request dikhega — approve kar do."
+      - role: customer
+        text: "Accha ok, try karta hoon net banking se."
+      - role: agent
+        text: "Bilkul ji! Agar koi issue aaye toh humein call kar lena, hum help karenge. Shukriya!"
+    outcome: completed_auth
+
+  - id: afa_05
+    category: insurance
+    amount: 8500
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call hai. Aapka ₹{amount} ka insurance premium payment pending hai — bank authentication complete nahi hua. Help chahiye?"
+      - role: customer
+        text: "Yeh bahut complicated hai yaar, har baar kuch na kuch problem. Pehle toh automatic hota tha."
+      - role: agent
+        text: "Main samajhta hoon, frustrating hai. RBI ne 2021 mein new rule laaya hai — customer protection ke liye. But process bahut simple hai — bas ek notification approve karna hai banking app pe."
+      - role: customer
+        text: "Theek hai, batao step by step kya karna hai."
+      - role: agent
+        text: "Step 1: Banking app kholo. Step 2: Notifications ya 'Pending Mandates' section jaao. Step 3: ₹{amount} ka {brand_name} request approve karo. Bas itna hi!"
+      - role: customer
+        text: "Ok wait... haan dikh raha hai. Approve kar diya."
+      - role: agent
+        text: "Bahut accha! Payment ab process ho jayega. Dhanyavaad ji, aapka insurance coverage continue rahega!"
+    outcome: completed_auth
+
+  - id: afa_06
+    category: subscription
+    amount: 1499
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka ₹{amount}/month subscription payment ruk gaya hai — bank authentication pending tha."
+      - role: customer
+        text: "Mujhe nahi karna, bahut baar try kiya payment nahi hota."
+      - role: agent
+        text: "Samajhta hoon ji, kaafi frustrating hoga. Kya aap batayenge kya error aa raha tha? Main exactly help kar sakta hoon."
+      - role: customer
+        text: "Nahi, bas cancel kar do subscription."
+      - role: agent
+        text: "Koi baat nahi ji, aapki marzi. Agar future mein wapas chahiye toh account saved rahega. Take care!"
+    outcome: refused
+
+  - id: afa_07
+    category: emi
+    amount: 18000
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Aapka ₹{amount} ka EMI auto-debit fail hua hai — authentication pending tha. Kya main help karun?"
+      - role: customer
+        text: "Abhi busy hoon, baad mein karunga."
+      - role: agent
+        text: "Bilkul ji, koi rush nahi. Kab convenient hoga? Main reminder bhej dunga."
+      - role: customer
+        text: "Kal subah karlunga."
+      - role: agent
+        text: "Perfect, kal subah ek SMS aa jayega reminder ke saath. Dhanyavaad ji!"
+    outcome: wants_callback
+
+  - id: afa_08
+    category: sip
+    amount: 10000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se bol raha hoon. Aapka ₹{amount} ka SIP payment authentication pending hai."
+      - role: customer
+        text: "Mujhe samajh nahi aa raha, yeh UPI PIN waala hai kya?"
+      - role: agent
+        text: "Nahi ji, yeh UPI PIN se alag hai. Auto-debit ke liye aapke bank ke app mein ek 'approve' button aata hai — jaise notification. Aapko bas ek tap karna hai."
+      - role: customer
+        text: "Accha notification aayega? Kaunse app pe?"
+      - role: agent
+        text: "Aapka bank account jis bank mein hai — usi bank ka app. For example HDFC ka app, SBI Yono, ICICI iMobile. Usme pending approvals section mein dikhega."
+      - role: customer
+        text: "Ok main HDFC app check karta hoon. Mil gaya, approve kar raha hoon."
+      - role: agent
+        text: "Bahut accha! ₹{amount} ka SIP payment ab ho jayega. Dhanyavaad ji!"
+    outcome: completed_auth
+
+  - id: afa_09
+    category: emi
+    amount: 35000
+    turns:
+      - role: agent
+        text: "Namaste ji! {brand_name} se hoon. Aapka ₹{amount} ka EMI payment bank authentication ke bina reh gaya. Kya main assist karun?"
+      - role: customer
+        text: "Main senior manager se baat karna chahta hoon, yeh system bahut kharab hai."
+      - role: agent
+        text: "Main samajhta hoon aap frustrated hain. Main abhi senior team se connect karta hoon. Aapko jaldi update milega."
+    outcome: needs_help
+
+  - id: afa_10
+    category: insurance
+    amount: 4200
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Aapka ₹{amount} ka premium payment pending hai — authentication complete karna hai. Kya abhi kar sakte hain?"
+      - role: customer
+        text: "Haan haan, batao kya karna hai jaldi se."
+      - role: agent
+        text: "Banking app kholo, notifications check karo, ₹{amount} ka {brand_name} approval approve karo. 30 second mein done!"
+      - role: customer
+        text: "Done, ho gaya approve."
+      - role: agent
+        text: "Shukriya ji! Payment process ho raha hai. Aapka insurance coverage safe hai!"
+    outcome: completed_auth
+
+  - id: afa_11
+    category: subscription
+    amount: 799
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka ₹{amount}/month ka subscription payment ruk gaya hai — ek bank approval pending tha."
+      - role: customer
+        text: "Kya matlab approval? Maine toh mandate de rakha hai."
+      - role: agent
+        text: "Ji mandate toh hai, but RBI ne ek extra step add kiya hai security ke liye. Har month aapke banking app pe ek quick approval aata hai — ek tap mein ho jaata hai."
+      - role: customer
+        text: "Har month karna padega yeh?"
+      - role: agent
+        text: "Haan ji, but bahut quick hai — sirf ek tap. Kuch banks mein auto-approve ka option bhi hota hai. Abhi ke liye banking app check kariye?"
+      - role: customer
+        text: "Accha theek hai, check karta hoon... haan mil gaya, approve kiya."
+      - role: agent
+        text: "Perfect! Payment ho jayega ab. Next month bhi notification aayega — bas approve kar dena. Dhanyavaad!"
+    outcome: completed_auth
+
+  - id: afa_12
+    category: emi
+    amount: 7500
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call hai. Aapka ₹{amount} ka EMI auto-debit authentication pending hai. Help chahiye?"
+      - role: customer
+        text: "Mera phone change kiya hai, purane phone pe tha banking app."
+      - role: agent
+        text: "Koi problem nahi ji. Naye phone pe banking app install karo aur login karo. Phir pending approvals mein ₹{amount} ka request dikhega. Ya phir net banking se bhi kar sakte ho."
+      - role: customer
+        text: "Abhi install nahi kar sakta, kal karunga."
+      - role: agent
+        text: "Bilkul ji! Kal reminder SMS bhej denge. Take your time!"
+    outcome: wants_callback
+
+  - id: afa_13
+    category: sip
+    amount: 3000
+    turns:
+      - role: agent
+        text: "Namaste! {brand_name} se hoon. Aapka ₹{amount} ka SIP payment authentication pending hai. Quick approval chahiye banking app pe."
+      - role: customer
+        text: "Yaar yeh RBI wala rule bahut bakwas hai, pehle automatic hota tha sab."
+      - role: agent
+        text: "Haan ji, main agree karta hoon thoda inconvenient hai. But yeh aapki security ke liye hai — koi unauthorized debit na ho. Bas ek tap hai, 5 second lagta hai."
+      - role: customer
+        text: "Theek hai theek hai, bata kya karna hai."
+      - role: agent
+        text: "Banking app kholo → notifications/pending mandates jaao → ₹{amount} SIP approve karo. Done!"
+      - role: customer
+        text: "Kar liya approve."
+      - role: agent
+        text: "Bahut accha ji! SIP continue rahega ab. Shukriya!"
+    outcome: completed_auth
+
+  - id: afa_14
+    category: emi
+    amount: 50000
+    turns:
+      - role: agent
+        text: "Namaste ji! {brand_name} se bol raha hoon. Aapka ₹{amount} ka EMI payment bank authentication ke bina pending hai."
+      - role: customer
+        text: "Itna bada amount hai, main pehle verify karna chahta hoon ki yeh genuine request hai."
+      - role: agent
+        text: "Bilkul sahi approach hai ji. Aap khud bank ko call kar sakte hain ya banking app mein directly check kar sakte hain — wahan {brand_name} ka naam dikhega ₹{amount} ke saath. Hum kabhi password ya OTP nahi maangenge."
+      - role: customer
+        text: "Accha, banking app mein check karta hoon... haan dikh raha hai {brand_name} ka request."
+      - role: agent
+        text: "Perfect! Approve kar dijiye aur payment ho jayega. Smart hai ki aapne verify kiya — always good practice!"
+    outcome: completed_auth
+
+  - id: afa_15
+    category: insurance
+    amount: 15000
+    turns:
+      - role: agent
+        text: "Hi! {brand_name} se call. Aapka ₹{amount} ka insurance premium authentication pending hai. Complete karna zaroori hai coverage maintain karne ke liye."
+      - role: customer
+        text: "Mera banking app mein kuch nahi dikh raha."
+      - role: agent
+        text: "Koi baat nahi. Kabhi kabhi thoda time lagta hai. Main ek fresh authentication request trigger karta hoon — 5 minute mein aapke banking app pe notification aayega."
+      - role: customer
+        text: "Ok, 5 minute wait karta hoon."
+      - role: agent
+        text: "Haan ji, agar 5 minute mein na aaye toh app close karke wapas kholo. Agar phir bhi nahi aaye toh humein call kar lena — hum bank se coordinate karenge."
+      - role: customer
+        text: "Aa gaya notification, approve kar diya."
+      - role: agent
+        text: "Shukriya ji! Premium payment process ho raha hai. Aapka coverage safe hai!"
+    outcome: completed_auth
